@@ -65,7 +65,7 @@ export const ProgressContainer = styled.View`
 `;
 
 export const ProgressBar = styled.View`
-  height: 6px;
+  height: 10px;
   flex: 1;
   background-color: ${colors.border.medium};
   border-radius: ${borderRadius.round}px;

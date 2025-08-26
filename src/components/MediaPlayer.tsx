@@ -1,5 +1,4 @@
 import React from 'react';
-import { TouchableOpacity, Platform } from 'react-native';
 
 // ** Types && Utils
 import { AudioPlayerState } from '../types/chat';
@@ -31,59 +30,26 @@ interface MediaPlayerProps {
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
   audioPlayer,
   onTogglePlayPause,
-  onSeek,
   onRewind,
   onFastForward,
   onRepeat,
 }) => {
-  // Progress Bar
-  const handleProgressBarPress = (event: any) => {
-    if (!audioPlayer.isLoaded) return;
-
-    let clickX: number;
-    let progressBarWidth: number;
-
-    if (Platform.OS === 'web') {
-      // Web-specific logic
-      const progressBar = event.currentTarget;
-      const rect = progressBar.getBoundingClientRect();
-      clickX = event.clientX - rect.left;
-      progressBarWidth = rect.width;
-    } else {
-      // React Native logic
-      const { locationX, target } = event.nativeEvent;
-      clickX = locationX;
-      progressBarWidth = target.measure(
-        (x: number, y: number, width: number) => {
-          progressBarWidth = width;
-        },
-      );
-      // Fallback to a reasonable width if measure fails
-      if (!progressBarWidth) progressBarWidth = 200;
-    }
-
-    const clickPercentage = clickX / progressBarWidth;
-    const newTime = clickPercentage * audioPlayer.totalTime;
-
-    onSeek(newTime);
-  };
-
   return (
     <MediaPlayerContainer>
       <ProgressContainer>
         <ProgressText>{formatTime(audioPlayer.currentTime)}</ProgressText>
-        <TouchableOpacity onPress={handleProgressBarPress} activeOpacity={0.8}>
-          <ProgressBar>
-            <ProgressFill
-              progress={
-                calculateProgress(
-                  audioPlayer.currentTime,
-                  audioPlayer.totalTime,
-                ) * 100
-              }
-            />
-          </ProgressBar>
-        </TouchableOpacity>
+
+        <ProgressBar>
+          <ProgressFill
+            progress={
+              calculateProgress(
+                audioPlayer.currentTime,
+                audioPlayer.totalTime,
+              ) * 100
+            }
+          />
+        </ProgressBar>
+
         <ProgressText>{formatTime(audioPlayer.totalTime)}</ProgressText>
       </ProgressContainer>
 
