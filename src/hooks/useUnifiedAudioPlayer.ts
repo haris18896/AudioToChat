@@ -36,6 +36,10 @@ export const useUnifiedAudioPlayer = (
   transcriptionData: TranscriptionData,
   _audioFileInfo?: { bundlePath: string; fileName: string },
 ) => {
+  console.log('useUnifiedAudioPlayer called with:', {
+    audioUri,
+    isWeb: Platform.OS === 'web',
+  });
   const [audioPlayer, setAudioPlayer] = useState<AudioPlayerState>({
     isPlaying: false,
     currentTime: 0,
@@ -213,9 +217,12 @@ export const useUnifiedAudioPlayer = (
 
   // Audio loading effect
   useEffect(() => {
+    console.log('Audio loading effect triggered, isWeb:', isWeb);
     if (isWeb) {
+      console.log('Loading web audio...');
       loadWebAudio();
     } else {
+      console.log('Loading native audio...');
       loadNativeAudio();
     }
 

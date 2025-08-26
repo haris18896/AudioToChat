@@ -13,11 +13,15 @@ import { Container, ChatContainer } from '../styles/ChatScreen';
 import transcriptionData from '../assets/json/example_audio.json';
 
 const ChatScreen: React.FC = () => {
+  console.log('ChatScreen rendering, Platform.OS:', Platform.OS);
+
   // Audio file path - This can be get via an API call
   const audioUri =
     Platform.OS === 'web'
       ? '/assets/audio/example_audio.mp3'
       : 'example_audio.mp3'; // Use local bundled audio file for mobile
+
+  console.log('ChatScreen audioUri:', audioUri);
 
   const {
     audioPlayer,
