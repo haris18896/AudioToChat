@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { ScrollView, Platform, StyleSheet, View } from 'react-native';
 
 // ** Utils
-import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useUnifiedAudioPlayer } from '../hooks/useUnifiedAudioPlayer';
 
 // ** Custom Components
 import Message from './Message';
@@ -11,7 +11,6 @@ import { Container, ChatContainer } from '../styles/ChatScreen';
 
 // ** Data
 import transcriptionData from '../assets/json/example_audio.json';
-import { useWebAudioPlayer } from '../hooks/useWebAudioPlayer';
 
 const ChatScreen: React.FC = () => {
   // Audio file path - This can be get via an API call
@@ -19,9 +18,6 @@ const ChatScreen: React.FC = () => {
     Platform.OS === 'web'
       ? '/assets/audio/example_audio.mp3'
       : 'example_audio.mp3'; // Use local bundled audio file for mobile
-
-  const audioPlayerHook =
-    Platform.OS === 'web' ? useWebAudioPlayer : useAudioPlayer;
 
   const {
     audioPlayer,
@@ -31,7 +27,7 @@ const ChatScreen: React.FC = () => {
     rewind,
     fastForward,
     repeat,
-  } = audioPlayerHook(audioUri, transcriptionData);
+  } = useUnifiedAudioPlayer(audioUri, transcriptionData);
 
   const handleTogglePlayPause = useCallback(() => {
     togglePlayPause();
