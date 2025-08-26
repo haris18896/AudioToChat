@@ -243,7 +243,6 @@ export const useAudioPlayer = (
           }));
         }
       } catch (error) {
-        console.error('Error seeking:', error);
         setAudioPlayer(prev => ({ ...prev, isSeeking: false }));
       }
     },
@@ -252,26 +251,12 @@ export const useAudioPlayer = (
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
-    console.log(
-      'togglePlayPause called. soundRef:',
-      !!soundRef.current,
-      'isLoaded:',
-      audioPlayer.isLoaded,
-    );
-
-    if (!soundRef.current) {
-      console.error('No sound reference available');
-      return;
-    }
-
-    if (!audioPlayer.isLoaded) {
-      console.error('Audio not loaded yet');
+    if (!soundRef.current || !audioPlayer.isLoaded) {
       return;
     }
 
     try {
       if (audioPlayer.isPlaying) {
-        console.log('Pausing audio...');
         soundRef.current.pause();
         setAudioPlayer(prev => ({ ...prev, isPlaying: false }));
 
@@ -281,14 +266,10 @@ export const useAudioPlayer = (
           updateIntervalRef.current = null;
         }
       } else {
-        console.log('Playing audio...');
-
-        // If we're at the end or very close to it, restart from beginning
         if (audioPlayer.currentTime >= audioPlayer.totalTime - 100) {
           await seekTo(0);
         }
 
-        // Reset playback speed to normal when resuming (unless we're in repeat mode)
         if (soundRef.current.setSpeed && !isRepeatingRef.current) {
           soundRef.current.setSpeed(1.0);
         }
@@ -318,7 +299,6 @@ export const useAudioPlayer = (
   const rewind = useCallback(async () => {
     if (phraseTimings.length === 0) return;
 
-    // Reset repeat state when rewinding
     isRepeatingRef.current = false;
     repeatEndTimeRef.current = 0;
     if (soundRef.current && soundRef.current.setSpeed) {
@@ -353,7 +333,6 @@ export const useAudioPlayer = (
   const fastForward = useCallback(async () => {
     if (phraseTimings.length === 0) return;
 
-    // Reset repeat state when fast forwarding
     isRepeatingRef.current = false;
     repeatEndTimeRef.current = 0;
     if (soundRef.current && soundRef.current.setSpeed) {
@@ -375,29 +354,20 @@ export const useAudioPlayer = (
     if (!soundRef.current || phraseTimings.length === 0) return;
 
     try {
-      // Find the last phrase that has been played
       const currentIndex = audioPlayer.currentPhraseIndex;
       const lastPlayedIndex = currentIndex > 0 ? currentIndex : 0;
       const lastPhrase = phraseTimings[lastPlayedIndex];
 
-      console.log('lastPhrase', lastPhrase);
-
       if (lastPhrase) {
-        console.log('Setting up repeat mode');
-
-        // Set repeat state
         isRepeatingRef.current = true;
         repeatEndTimeRef.current = lastPhrase.endTime;
 
-        // Set playback speed to 0.75x
         if (soundRef.current.setSpeed) {
           soundRef.current.setSpeed(0.75);
         }
 
-        // Seek to the beginning of the last phrase
         await seekTo(lastPhrase.startTime);
 
-        // Start playing if not already playing
         if (!audioPlayer.isPlaying) {
           soundRef.current.play();
           setAudioPlayer(prev => ({
@@ -405,13 +375,12 @@ export const useAudioPlayer = (
             isPlaying: true,
             playbackRate: 0.75,
           }));
-          // Start time updates when audio was paused
+
           startTimeUpdates();
         } else {
           setAudioPlayer(prev => ({ ...prev, playbackRate: 0.75 }));
         }
       } else {
-        console.log('No phrase to repeat, resetting to normal speed');
         if (soundRef.current.setSpeed) {
           soundRef.current.setSpeed(1.0);
         }
