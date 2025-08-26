@@ -25,7 +25,6 @@ if (Platform.OS !== 'web') {
       console.warn('Sound import failed or is not a constructor');
       Sound = null;
     } else {
-      // Initialize react-native-sound
       Sound.setCategory('Playback');
       console.log('react-native-sound initialized successfully');
     }
@@ -53,12 +52,13 @@ export const useAudioPlayer = (
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [visibleMessages, setVisibleMessages] = useState<ChatMessage[]>([]);
   const [phraseTimings, setPhraseTimings] = useState<PhraseTiming[]>([]);
-  const [lastSpokenPhrase, setLastSpokenPhrase] = useState<ChatMessage | null>(
-    null,
-  );
 
   const soundRef = useRef<any>(null);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Add refs to track repeat state
+  const isRepeatingRef = useRef<boolean>(false);
+  const repeatEndTimeRef = useRef<number>(0);
 
   // Process transcription data into phrase timings
   useEffect(() => {
@@ -68,7 +68,6 @@ export const useAudioPlayer = (
     const chatMessages = phraseTimingsToMessages(timings);
     setMessages(chatMessages);
 
-    // Calculate total duration
     const totalDuration =
       timings.length > 0 ? timings[timings.length - 1].endTime : 0;
 
@@ -94,15 +93,6 @@ export const useAudioPlayer = (
 
     setVisibleMessages(updatedVisible);
     setAudioPlayer(prev => ({ ...prev, currentPhraseIndex }));
-
-    // Track last spoken phrase for repeat functionality
-    const currentPhrase = phraseTimings[currentPhraseIndex];
-    if (currentPhrase && audioPlayer.currentTime >= currentPhrase.startTime) {
-      const lastMessage = messages.find(msg => msg.id === currentPhrase.id);
-      if (lastMessage) {
-        setLastSpokenPhrase(lastMessage);
-      }
-    }
   }, [audioPlayer.currentTime, phraseTimings, messages]);
 
   const loadAudio = useCallback(async () => {
@@ -113,15 +103,12 @@ export const useAudioPlayer = (
       return;
     }
 
-    // Additional check to ensure Sound is a valid constructor
     if (typeof Sound !== 'function') {
       console.error('Sound is not a valid constructor function');
       return;
     }
 
     try {
-      console.log('Loading audio file...', audioUri);
-
       let soundSource: string | number;
       if (typeof audioUri === 'string') {
         soundSource = audioUri;
@@ -132,9 +119,6 @@ export const useAudioPlayer = (
         return;
       }
 
-      // Create Sound instance with the audio source
-      // For local files, pass null as the second parameter (basePath)
-      // For remote files, pass undefined
       const basePath =
         typeof soundSource === 'string' && !soundSource.startsWith('http')
           ? Sound.MAIN_BUNDLE
@@ -142,18 +126,17 @@ export const useAudioPlayer = (
 
       const sound = new Sound(soundSource, basePath, (error: any) => {
         if (error) {
-          console.error('Error loading audio:', error);
-          console.error('Audio source:', soundSource);
-          console.error('Base path:', basePath);
+          console.error({
+            'Base path:': basePath,
+            'Audio source:': soundSource,
+            'Error loading audio:': error,
+          });
+
           return;
         }
 
         const duration = sound.getDuration();
-        console.log(
-          'Audio loaded successfully. Duration:',
-          duration,
-          'seconds',
-        );
+
         setAudioPlayer(prev => ({
           ...prev,
           isLoaded: true,
@@ -166,6 +149,8 @@ export const useAudioPlayer = (
       console.error('Error creating sound:', error);
     }
   }, [audioUri]);
+
+  console.log('soundRef.current : ', soundRef.current);
 
   useEffect(() => {
     loadAudio();
@@ -190,6 +175,20 @@ export const useAudioPlayer = (
         soundRef.current.getCurrentTime((seconds: number) => {
           const currentTime = seconds * 1000;
 
+          // Check if we're repeating and have reached the end of the repeated phrase
+          if (
+            isRepeatingRef.current &&
+            currentTime >= repeatEndTimeRef.current
+          ) {
+            console.log('Repeat phrase ended, resetting speed to normal');
+            if (soundRef.current && soundRef.current.setSpeed) {
+              soundRef.current.setSpeed(1.0);
+            }
+            setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
+            isRepeatingRef.current = false;
+            repeatEndTimeRef.current = 0;
+          }
+
           if (
             currentTime >= audioPlayer.totalTime &&
             audioPlayer.totalTime > 0
@@ -200,7 +199,12 @@ export const useAudioPlayer = (
               isPlaying: false,
               currentTime: 0,
               currentPhraseIndex: 0,
+              playbackRate: 1.0,
             }));
+
+            // Reset repeat state
+            isRepeatingRef.current = false;
+            repeatEndTimeRef.current = 0;
 
             if (updateIntervalRef.current) {
               clearInterval(updateIntervalRef.current);
@@ -278,8 +282,8 @@ export const useAudioPlayer = (
       } else {
         console.log('Playing audio...');
 
-        // Reset playback speed to normal when resuming
-        if (soundRef.current.setSpeed) {
+        // Reset playback speed to normal when resuming (unless we're in repeat mode)
+        if (soundRef.current.setSpeed && !isRepeatingRef.current) {
           soundRef.current.setSpeed(1.0);
         }
 
@@ -290,7 +294,7 @@ export const useAudioPlayer = (
         setAudioPlayer(prev => ({
           ...prev,
           isPlaying: true,
-          playbackRate: 1.0,
+          playbackRate: isRepeatingRef.current ? 0.75 : 1.0,
         }));
 
         startTimeUpdates();
@@ -310,6 +314,14 @@ export const useAudioPlayer = (
   // Rewind: Go to beginning of current phrase, or previous phrase if at beginning
   const rewind = useCallback(async () => {
     if (phraseTimings.length === 0) return;
+
+    // Reset repeat state when rewinding
+    isRepeatingRef.current = false;
+    repeatEndTimeRef.current = 0;
+    if (soundRef.current && soundRef.current.setSpeed) {
+      soundRef.current.setSpeed(1.0);
+    }
+    setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
 
     const currentIndex = audioPlayer.currentPhraseIndex;
     let targetIndex = currentIndex;
@@ -338,6 +350,14 @@ export const useAudioPlayer = (
   const fastForward = useCallback(async () => {
     if (phraseTimings.length === 0) return;
 
+    // Reset repeat state when fast forwarding
+    isRepeatingRef.current = false;
+    repeatEndTimeRef.current = 0;
+    if (soundRef.current && soundRef.current.setSpeed) {
+      soundRef.current.setSpeed(1.0);
+    }
+    setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
+
     const currentIndex = audioPlayer.currentPhraseIndex;
     const nextIndex = Math.min(phraseTimings.length - 1, currentIndex + 1);
     const nextPhrase = phraseTimings[nextIndex];
@@ -357,7 +377,15 @@ export const useAudioPlayer = (
       const lastPlayedIndex = currentIndex > 0 ? currentIndex : 0;
       const lastPhrase = phraseTimings[lastPlayedIndex];
 
+      console.log('lastPhrase', lastPhrase);
+
       if (lastPhrase) {
+        console.log('Setting up repeat mode');
+
+        // Set repeat state
+        isRepeatingRef.current = true;
+        repeatEndTimeRef.current = lastPhrase.endTime;
+
         // Set playback speed to 0.75x
         if (soundRef.current.setSpeed) {
           soundRef.current.setSpeed(0.75);
@@ -368,18 +396,22 @@ export const useAudioPlayer = (
 
         // Start playing if not already playing
         if (!audioPlayer.isPlaying) {
-          soundRef.current.play((success: boolean) => {
-            if (success) {
-              setAudioPlayer(prev => ({
-                ...prev,
-                isPlaying: true,
-                playbackRate: 0.75,
-              }));
-            }
-          });
+          setAudioPlayer(prev => ({
+            ...prev,
+            isPlaying: true,
+            playbackRate: 0.75,
+          }));
+          // Start time updates when audio was paused
+          startTimeUpdates();
         } else {
           setAudioPlayer(prev => ({ ...prev, playbackRate: 0.75 }));
         }
+      } else {
+        console.log('No phrase to repeat, resetting to normal speed');
+        if (soundRef.current.setSpeed) {
+          soundRef.current.setSpeed(1.0);
+        }
+        setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
       }
     } catch (error) {
       console.error('Error repeating last phrase:', error);
@@ -389,6 +421,7 @@ export const useAudioPlayer = (
     audioPlayer.currentPhraseIndex,
     phraseTimings,
     seekTo,
+    startTimeUpdates,
   ]);
 
   return {
@@ -400,6 +433,5 @@ export const useAudioPlayer = (
     rewind,
     fastForward,
     repeat,
-    lastSpokenPhrase,
   };
 };
