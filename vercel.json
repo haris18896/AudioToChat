@@ -1,22 +1,12 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
+  "buildCommand": "yarn vercel-build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "installCommand": "yarn install",
   "routes": [
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "buildCommand": "yarn vercel-build",
-  "outputDirectory": "dist",
-  "framework": null,
-  "installCommand": "yarn install"
+  ]
 }
