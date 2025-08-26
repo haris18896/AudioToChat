@@ -17,6 +17,7 @@ export const MediaWrapper = styled.View`
 export const MediaPlayerContainer = styled.View`
   background-color: ${colors.background.primary};
   padding-bottom: ${spacing.md}px;
+  padding-top: ${spacing.sm}px;
 `;
 
 export const ControlsContainer = styled.View`
@@ -81,7 +82,7 @@ export const ProgressFill = styled.View<{ progress: number }>`
 `;
 
 export const ProgressText = styled.Text`
-  color: ${colors.text.primary};
+  color: ${colors.text.tertiary};
   font-size: 14px;
   font-weight: 500;
   min-width: 50px;

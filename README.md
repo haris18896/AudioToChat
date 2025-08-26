@@ -1,4 +1,4 @@
-# AudioToChat - React Native Audio Player with Transcript
+# AudioToChat
 
 A React Native application that plays audio files while displaying and highlighting synchronized transcript text in a chat-like interface.
 
@@ -10,51 +10,87 @@ A React Native application that plays audio files while displaying and highlight
 - **Phrase Navigation**: Skip to previous/next phrases during playback
 - **Slow Repeat**: Repeat the last spoken phrase at 0.75x speed for better comprehension
 
-## 🚀 Getting Started
-
-### Prerequisites
+## 📋 Prerequisites
 
 - Node.js (>= 18.0.0)
 - React Native development environment set up
 - For iOS: Xcode and CocoaPods
 - For Android: Android Studio and SDK
 
-### Installation
+## ⚡ Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone [AudioToChat](https://github.com/haris18896/AudioToChat)
    cd AudioToChat
    ```
 
 2. **Install dependencies**
    ```bash
+   npm install
+   # or
    yarn install
    ```
 
 3. **Install iOS dependencies** (iOS only)
    ```bash
    cd ios
+   bundle install
    bundle exec pod install
    cd ..
    ```
 
-## 🏃‍♂️ Running the Application
+## 🚀 Running the Application
 
-### Web Version
+### Web
 ```bash
+npm run web
+# or
 yarn web
 ```
-The web version will be available at `http://localhost:3000`
+Access the application at `http://localhost:3000`
 
-### iOS Version
+### iOS
 ```bash
+npm run ios
+# or
 yarn ios
 ```
 
-### Android Version
+### Android
 ```bash
+npm run android
+# or
 yarn android
+```
+
+## 🧪 Testing
+
+### Run all tests
+```bash
+npm test
+# or
+yarn test
+```
+
+### Run unit tests only
+```bash
+npm run test:unit
+```
+
+### Run integration tests only
+```bash
+npm run test:integration
+```
+
+### Run tests with coverage
+```bash
+npm run test:coverage
+```
+
+### Run tests in watch mode
+```bash
+npm run test:watch
 ```
 
 ## 📁 Project Structure
@@ -67,8 +103,7 @@ AudioToChat/
 │   │   ├── Message.tsx      # Individual message component
 │   │   └── MediaPlayer.tsx  # Audio player controls
 │   ├── hooks/               # Custom React hooks
-│   │   ├── useAudioPlayer.ts    # Main audio player logic
-│   │   └── useWebAudioPlayer.ts # Web-specific audio logic
+│   │   └── useUnifiedAudioPlayer.ts # Audio player logic
 │   ├── styles/              # Styled components
 │   ├── utils/               # Utility functions
 │   │   ├── transcriptionUtils.ts # Transcript processing
@@ -76,6 +111,7 @@ AudioToChat/
 │   ├── assets/              # Static assets
 │   │   └── json/            # Sample transcript data
 │   └── types/               # TypeScript type definitions
+├── __tests__/               # Test files
 ├── ios/                     # iOS-specific files
 ├── android/                 # Android-specific files
 └── public/                  # Web static files
@@ -116,19 +152,11 @@ The application expects transcript metadata in the following JSON format:
 - `time`: Duration (ms) of the phrase in audio
 - Audio plays phrases in interleaved order between speakers
 
-## 🎨 UI Features
-
-- **Real-time Highlighting**: Current phrase is highlighted during playback
-- **Chat Interface**: Messages displayed in a conversational format
-- **Responsive Design**: Adapts to different screen sizes
-- **Progress Bar**: Visual indication of playback progress
-- **Time Display**: Shows current time and total duration
-
 ## 🔧 Technical Details
 
 ### Audio Playback
 - **Mobile**: Uses `react-native-sound` for native audio playback
-- **Web**: Uses `useWebAudioPlayer` with HTML5 Audio API
+- **Web**: Uses HTML5 Audio API
 - **Synchronization**: 50ms interval updates for precise phrase timing
 
 ### State Management
@@ -141,17 +169,12 @@ The application expects transcript metadata in the following JSON format:
 - Platform-specific optimizations
 - Modern, clean UI design
 
-## 🧪 Testing
-
-Run the test suite:
-```bash
-yarn test
-```
-
 ## 📦 Building for Production
 
 ### Web Build
 ```bash
+npm run build:web
+# or
 yarn build:web
 ```
 
@@ -187,25 +210,16 @@ lsof -ti:8081 | xargs kill -9
 ### Node Modules Issues
 ```bash
 # Clean reinstall
-rm -rf node_modules yarn.lock
-yarn install
+rm -rf node_modules package-lock.json yarn.lock
+npm install
 ```
-
-## 📋 Requirements Fulfilled
-
-✅ **Audio Player**: Play, Pause, Rewind, Forward, Repeat controls  
-✅ **Transcript Display**: Phrases shown in order with highlighting  
-✅ **Phrase Navigation**: Skip between phrases during playback  
-✅ **Slow Repeat**: Last phrase replayed at 0.75x speed  
-✅ **Cross-Platform**: Web, iOS, Android support  
-✅ **Proper Metadata**: Supports specified JSON format  
 
 ## 🛠️ Development
 
 ### Code Quality
 - TypeScript for type safety
 - ESLint for code linting
-- Prettier for code formatting
+- Jest for testing
 - Git hooks for pre-commit checks
 
 ### Architecture
@@ -220,4 +234,4 @@ This project is part of a React Native coding assessment.
 
 ---
 
-**Built with React Native 0.81.0 and ❤️**
+**Built with React Native and ❤️**
