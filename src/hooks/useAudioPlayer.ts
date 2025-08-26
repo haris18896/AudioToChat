@@ -22,14 +22,11 @@ if (Platform.OS !== 'web') {
   try {
     Sound = require('react-native-sound').default;
     if (!Sound || typeof Sound !== 'function') {
-      console.warn('Sound import failed or is not a constructor');
       Sound = null;
     } else {
       Sound.setCategory('Playback');
-      console.log('react-native-sound initialized successfully');
     }
   } catch (error) {
-    console.warn('react-native-sound not available:', error);
     Sound = null;
   }
 }
@@ -99,12 +96,10 @@ export const useAudioPlayer = (
     if (Platform.OS === 'web') return;
 
     if (!Sound) {
-      console.error('react-native-sound not available for audio playback');
       return;
     }
 
     if (typeof Sound !== 'function') {
-      console.error('Sound is not a valid constructor function');
       return;
     }
 
@@ -115,7 +110,6 @@ export const useAudioPlayer = (
       } else if (typeof audioUri === 'number') {
         soundSource = audioUri;
       } else {
-        console.error('Invalid audio URI type:', typeof audioUri);
         return;
       }
 
@@ -162,23 +156,43 @@ export const useAudioPlayer = (
     };
   }, [loadAudio]);
 
+  const handleAudioEnd = useCallback(() => {
+    // Stop the audio
+    if (soundRef.current) {
+      soundRef.current.pause();
+    }
+
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+      updateIntervalRef.current = null;
+    }
+
+    setAudioPlayer(prev => ({
+      ...prev,
+      isPlaying: false,
+      currentTime: 0,
+      currentPhraseIndex: 0,
+      playbackRate: 1.0,
+    }));
+
+    isRepeatingRef.current = false;
+    repeatEndTimeRef.current = 0;
+  }, []);
+
   const startTimeUpdates = useCallback(() => {
     if (updateIntervalRef.current) {
       clearInterval(updateIntervalRef.current);
     }
 
-    console.log('Starting time updates...');
     updateIntervalRef.current = setInterval(() => {
       if (soundRef.current) {
         soundRef.current.getCurrentTime((seconds: number) => {
           const currentTime = seconds * 1000;
 
-          // Check if we're repeating and have reached the end of the repeated phrase
           if (
             isRepeatingRef.current &&
             currentTime >= repeatEndTimeRef.current
           ) {
-            console.log('Repeat phrase ended, resetting speed to normal');
             if (soundRef.current && soundRef.current.setSpeed) {
               soundRef.current.setSpeed(1.0);
             }
@@ -187,33 +201,22 @@ export const useAudioPlayer = (
             repeatEndTimeRef.current = 0;
           }
 
+          // Check if audio has ended
           if (
-            currentTime >= audioPlayer.totalTime &&
-            audioPlayer.totalTime > 0
+            audioPlayer.totalTime > 0 &&
+            (currentTime >= audioPlayer.totalTime - 100 ||
+              seconds >= audioPlayer.totalTime / 1000 - 0.1)
           ) {
-            console.log('Audio ended, resetting state');
-            setAudioPlayer(prev => ({
-              ...prev,
-              isPlaying: false,
-              currentTime: 0,
-              currentPhraseIndex: 0,
-              playbackRate: 1.0,
-            }));
-
-            // Reset repeat state
-            isRepeatingRef.current = false;
-            repeatEndTimeRef.current = 0;
-
-            if (updateIntervalRef.current) {
-              clearInterval(updateIntervalRef.current);
-            }
-          } else {
-            setAudioPlayer(prev => ({ ...prev, currentTime }));
+            handleAudioEnd();
+            return;
           }
+
+          // Update current time
+          setAudioPlayer(prev => ({ ...prev, currentTime }));
         });
       }
     }, 50);
-  }, [audioPlayer.totalTime]);
+  }, [audioPlayer.totalTime, handleAudioEnd]);
 
   // Seek to specific time
   const seekTo = useCallback(
@@ -280,15 +283,17 @@ export const useAudioPlayer = (
       } else {
         console.log('Playing audio...');
 
+        // If we're at the end or very close to it, restart from beginning
+        if (audioPlayer.currentTime >= audioPlayer.totalTime - 100) {
+          await seekTo(0);
+        }
+
         // Reset playback speed to normal when resuming (unless we're in repeat mode)
         if (soundRef.current.setSpeed && !isRepeatingRef.current) {
           soundRef.current.setSpeed(1.0);
         }
 
-        // If we're at the end, restart from beginning
-        if (audioPlayer.currentTime >= audioPlayer.totalTime) {
-          await seekTo(0);
-        }
+        soundRef.current.play();
         setAudioPlayer(prev => ({
           ...prev,
           isPlaying: true,
@@ -394,6 +399,7 @@ export const useAudioPlayer = (
 
         // Start playing if not already playing
         if (!audioPlayer.isPlaying) {
+          soundRef.current.play();
           setAudioPlayer(prev => ({
             ...prev,
             isPlaying: true,

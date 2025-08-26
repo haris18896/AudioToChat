@@ -28,11 +28,11 @@ interface MediaPlayerProps {
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
-  audioPlayer,
-  onTogglePlayPause,
   onRewind,
-  onFastForward,
   onRepeat,
+  audioPlayer,
+  onFastForward,
+  onTogglePlayPause,
 }) => {
   return (
     <MediaPlayerContainer>
