@@ -86,7 +86,13 @@ const Message: React.FC<MessageProps> = ({ message }) => {
     <Animated.View style={[animationStyles]}>
       <Animated.View style={highlightStyles}>
         <MessageContainer align={align}>
-          <SenderName sender={message.sender}>{senderName}</SenderName>
+          <SenderName
+            isCurrent={message.isCurrent}
+            isHighlighted={message.isHighlighted}
+            sender={message.sender}
+          >
+            {senderName}
+          </SenderName>
           <MessageBubble
             sender={message.sender}
             isHighlighted={message.isHighlighted}

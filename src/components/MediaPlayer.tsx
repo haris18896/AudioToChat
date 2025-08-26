@@ -16,6 +16,7 @@ import {
   ControlButtonText,
   PlayPauseButtonText,
   MediaPlayerContainer,
+  MediaWrapper,
 } from '../styles/MediaPlayer';
 
 interface MediaPlayerProps {
@@ -35,47 +36,49 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   onTogglePlayPause,
 }) => {
   return (
-    <MediaPlayerContainer>
-      <ProgressContainer>
-        <ProgressText>{formatTime(audioPlayer.currentTime)}</ProgressText>
+    <MediaWrapper>
+      <ProgressBar>
+        <ProgressFill
+          progress={
+            calculateProgress(audioPlayer.currentTime, audioPlayer.totalTime) *
+            100
+          }
+        />
+      </ProgressBar>
+      <MediaPlayerContainer>
+        <ProgressContainer>
+          <ProgressText>{formatTime(audioPlayer.currentTime)}</ProgressText>
 
-        <ProgressBar>
-          <ProgressFill
-            progress={
-              calculateProgress(
-                audioPlayer.currentTime,
-                audioPlayer.totalTime,
-              ) * 100
-            }
-          />
-        </ProgressBar>
+          <ProgressText>{formatTime(audioPlayer.totalTime)}</ProgressText>
+        </ProgressContainer>
 
-        <ProgressText>{formatTime(audioPlayer.totalTime)}</ProgressText>
-      </ProgressContainer>
+        <ControlsContainer>
+          <ControlButton onPress={onRewind} disabled={!audioPlayer.isLoaded}>
+            <ControlButtonText>⏪</ControlButtonText>
+          </ControlButton>
 
-      <ControlsContainer>
-        <ControlButton onPress={onRewind} disabled={!audioPlayer.isLoaded}>
-          <ControlButtonText>⏪</ControlButtonText>
-        </ControlButton>
+          <PlayPauseButton
+            onPress={onTogglePlayPause}
+            disabled={!audioPlayer.isLoaded}
+          >
+            <PlayPauseButtonText>
+              {audioPlayer?.isPlaying ? '⏸️' : '▶️'}
+            </PlayPauseButtonText>
+          </PlayPauseButton>
 
-        <PlayPauseButton
-          onPress={onTogglePlayPause}
-          disabled={!audioPlayer.isLoaded}
-        >
-          <PlayPauseButtonText>
-            {audioPlayer?.isPlaying ? '⏸️' : '▶️'}
-          </PlayPauseButtonText>
-        </PlayPauseButton>
+          <ControlButton
+            onPress={onFastForward}
+            disabled={!audioPlayer.isLoaded}
+          >
+            <ControlButtonText>⏩</ControlButtonText>
+          </ControlButton>
 
-        <ControlButton onPress={onFastForward} disabled={!audioPlayer.isLoaded}>
-          <ControlButtonText>⏩</ControlButtonText>
-        </ControlButton>
-
-        <ControlButton onPress={onRepeat} disabled={!audioPlayer.isLoaded}>
-          <ControlButtonText>🔁</ControlButtonText>
-        </ControlButton>
-      </ControlsContainer>
-    </MediaPlayerContainer>
+          <ControlButton onPress={onRepeat} disabled={!audioPlayer.isLoaded}>
+            <ControlButtonText>🔁</ControlButtonText>
+          </ControlButton>
+        </ControlsContainer>
+      </MediaPlayerContainer>
+    </MediaWrapper>
   );
 };
 

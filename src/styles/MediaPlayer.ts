@@ -6,16 +6,17 @@ import {
   borderRadius,
 } from '../@core/infrustructure/theme';
 
-export const MediaPlayerContainer = styled.View`
-  background-color: ${colors.background.primary};
-  padding: ${spacing.md}px;
-  border-top-width: 1px;
-  border-top-color: ${colors.border.light};
+export const MediaWrapper = styled.View`
+  elevation: 1;
   shadow-color: ${colors.text.primary};
   shadow-offset: 0px 2px;
   shadow-opacity: 0.05;
   shadow-radius: 4px;
-  elevation: 1;
+`;
+
+export const MediaPlayerContainer = styled.View`
+  background-color: ${colors.background.primary};
+  padding-bottom: ${spacing.md}px;
 `;
 
 export const ControlsContainer = styled.View`
@@ -66,19 +67,17 @@ export const ProgressContainer = styled.View`
 
 export const ProgressBar = styled.View`
   height: 10px;
-  flex: 1;
-  background-color: ${colors.border.medium};
-  border-radius: ${borderRadius.round}px;
-  margin-horizontal: ${spacing.md}px;
   overflow: hidden;
-  border: 1px solid ${colors.border.dark};
+  background-color: ${colors.border.medium};
+  border: 1px solid ${colors.border.medium};
 `;
 
 export const ProgressFill = styled.View<{ progress: number }>`
-  height: 100%;
+  height: 10px;
   width: ${({ progress }: { progress: number }) => progress}%;
   background-color: ${colors.secondary.main};
-  border-radius: ${borderRadius.round}px;
+  border-top-right-radius: ${borderRadius.round}px;
+  border-bottom-right-radius: ${borderRadius.round}px;
 `;
 
 export const ProgressText = styled.Text`
