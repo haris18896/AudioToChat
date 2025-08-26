@@ -1,11 +1,12 @@
 import React from 'react';
-import { Text } from 'react-native';
+
 import { SafeAreaView } from 'react-native';
+import ChatScreen from './src/components/ChatScreen';
 
 function App() {
   return (
     <SafeAreaView>
-      <Text>Hello there</Text>
+      <ChatScreen />
     </SafeAreaView>
   );
 }
