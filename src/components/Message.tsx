@@ -79,9 +79,6 @@ const Message: React.FC<MessageProps> = ({ message }) => {
   };
 
   const highlightStyles = {
-    transform: [
-      { scale: Animated.add(1, Animated.multiply(highlightAnim, 0.02)) },
-    ],
     shadowOpacity: highlightAnim,
   };
 
