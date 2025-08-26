@@ -57,8 +57,6 @@ export const useAudioPlayer = (
     null,
   );
 
-  console.log('lastSpokenPhrase : ', lastSpokenPhrase);
-
   const soundRef = useRef<any>(null);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -289,23 +287,13 @@ export const useAudioPlayer = (
         if (audioPlayer.currentTime >= audioPlayer.totalTime) {
           await seekTo(0);
         }
+        setAudioPlayer(prev => ({
+          ...prev,
+          isPlaying: true,
+          playbackRate: 1.0,
+        }));
 
-        soundRef.current.play((success: boolean) => {
-          console.log('Play callback - success:', success);
-          if (success) {
-            console.log('Audio play success, setting isPlaying to true');
-            setAudioPlayer(prev => ({
-              ...prev,
-              isPlaying: true,
-              playbackRate: 1.0,
-            }));
-
-            // Start time updates when playing begins
-            startTimeUpdates();
-          } else {
-            console.error('Failed to play audio - success was false');
-          }
-        });
+        startTimeUpdates();
       }
     } catch (error) {
       console.error('Error toggling play/pause:', error);
@@ -412,5 +400,6 @@ export const useAudioPlayer = (
     rewind,
     fastForward,
     repeat,
+    lastSpokenPhrase,
   };
 };
