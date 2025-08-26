@@ -1,14 +1,21 @@
 import React from 'react';
 
-import { SafeAreaView } from 'react-native';
+import { SafeAreaView, StyleSheet } from 'react-native';
 import ChatScreen from './src/components/ChatScreen';
 
 function App() {
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.container}>
       <ChatScreen />
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+});
 
 export default App;

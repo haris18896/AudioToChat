@@ -8,18 +8,19 @@ import {
 } from '../@core/infrustructure/theme';
 
 export const MessageContainer = styled.View<{ align: 'left' | 'right' }>`
-  margin-vertical: ${spacing.xs}px;
+  margin-vertical: ${spacing.sm}px;
   align-items: ${({ align }) => (align === 'left' ? 'flex-start' : 'flex-end')};
-  max-width: 80%;
+  max-width: 85%;
   align-self: ${({ align }) => (align === 'left' ? 'flex-start' : 'flex-end')};
+  width: 100%;
 `;
 
 export const SenderName = styled.Text<{ sender: 'john' | 'jack' }>`
   font-size: ${typography.fontSize.sm}px;
   font-weight: ${typography.fontWeight.medium};
-  color: ${({ sender }) =>
-    sender === 'john' ? colors.chat.john : colors.chat.jack};
+  color: ${colors.text.primary};
   margin-bottom: ${spacing.xs}px;
+  margin-left: ${spacing.xs}px;
 `;
 
 export const MessageBubble = styled.View<{
@@ -29,20 +30,22 @@ export const MessageBubble = styled.View<{
   isCurrent?: boolean;
 }>`
   background-color: ${({ isHighlighted, isSuggested, isCurrent }) => {
-    if (isCurrent) return colors.chat.messageHighlight;
-    if (isSuggested) return colors.chat.messageHighlight;
-    if (isHighlighted) return colors.chat.messageHighlight;
-    return colors.chat.messageBg;
+    if (isCurrent) return colors.secondary.light;
+    if (isSuggested) return colors.secondary.light;
+    if (isHighlighted) return colors.secondary.light;
+    return colors.background.primary;
   }};
   padding-horizontal: ${spacing.md}px;
-  padding-vertical: ${spacing.sm}px;
+  padding-vertical: ${spacing.md}px;
   border-radius: ${borderRadius.lg}px;
-  border-width: 2px;
-  border-color: ${({ sender, isCurrent }) => {
-    if (isCurrent) return colors.primary.main;
-    return sender === 'john' ? colors.chat.john : colors.chat.jack;
+  border-width: 1px;
+  border-color: ${({ isCurrent }) => {
+    if (isCurrent) return colors.secondary.main;
+    return colors.border.light;
   }};
   ${shadows.sm}
+  max-width: 280px;
+  min-height: 44px;
 `;
 
 export const MessageText = styled.Text<{

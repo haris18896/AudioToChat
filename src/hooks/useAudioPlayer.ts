@@ -53,6 +53,8 @@ export const useAudioPlayer = (
     null,
   );
 
+  console.log('lastSpokenPhrase : ', lastSpokenPhrase);
+
   const soundRef = useRef<any>(null);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -237,6 +239,12 @@ export const useAudioPlayer = (
         console.log('Pausing audio...', soundRef.current);
         soundRef.current.pause();
         setAudioPlayer(prev => ({ ...prev, isPlaying: false }));
+
+        // Stop time updates when pausing
+        if (updateIntervalRef.current) {
+          clearInterval(updateIntervalRef.current);
+          updateIntervalRef.current = null;
+        }
       } else {
         console.log('Playing audio...', soundRef.current);
         // If we're at the end, restart from beginning
@@ -248,6 +256,9 @@ export const useAudioPlayer = (
           if (success) {
             console.log('Audio play success, setting isPlaying to true');
             setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
+
+            // Start time updates when playing begins
+            startTimeUpdates();
           } else {
             console.error('Failed to play audio');
           }
@@ -262,6 +273,7 @@ export const useAudioPlayer = (
     audioPlayer.currentTime,
     audioPlayer.totalTime,
     seekTo,
+    startTimeUpdates,
   ]);
 
   // Rewind: Go to beginning of current phrase, or previous phrase if at beginning

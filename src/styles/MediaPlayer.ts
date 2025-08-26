@@ -7,10 +7,15 @@ import {
 } from '../@core/infrustructure/theme';
 
 export const MediaPlayerContainer = styled.View`
-  background-color: ${colors.background.secondary};
+  background-color: ${colors.background.primary};
   padding: ${spacing.md}px;
   border-top-width: 1px;
   border-top-color: ${colors.border.light};
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  ${shadows.lg}
 `;
 
 export const ControlsContainer = styled.View`
@@ -28,7 +33,7 @@ export const PlayPauseButton = styled.TouchableOpacity<{ disabled?: boolean }>`
     disabled ? colors.border.light : colors.primary.main};
   width: 60px;
   height: 60px;
-  border-radius: 30px;
+  border-radius: 8px;
   align-items: center;
   justify-content: center;
   margin-horizontal: 20px;
@@ -61,11 +66,11 @@ export const ProgressContainer = styled.View`
 `;
 
 export const ProgressBar = styled.View`
-  height: 4px;
-  width: 200px;
+  height: 6px;
+  flex: 1;
   background-color: ${colors.border.light};
   border-radius: ${borderRadius.round}px;
-  margin-vertical: ${spacing.sm}px;
+  margin-horizontal: ${spacing.md}px;
   overflow: hidden;
 `;
 

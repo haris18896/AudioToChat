@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { ScrollView, Platform, StyleSheet } from 'react-native';
+import { ScrollView, Platform, StyleSheet, View } from 'react-native';
 
 // ** Utils
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
@@ -85,7 +85,7 @@ const ChatScreen: React.FC = () => {
   return (
     <Container>
       {Platform.OS === 'web' ? (
-        <div style={styles.webContentContainer}>
+        <View style={styles.webContentContainer}>
           <ChatContainer>
             {messages.map(message => (
               <Message
@@ -95,7 +95,7 @@ const ChatScreen: React.FC = () => {
               />
             ))}
           </ChatContainer>
-        </div>
+        </View>
       ) : (
         <ScrollView
           style={styles.container}
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   webContentContainer: {
-    overflow: 'scroll',
+    overflow: 'scroll' as any,
     flexGrow: 1,
     paddingBottom: 20,
     minHeight: 600,
