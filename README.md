@@ -213,25 +213,3 @@ lsof -ti:8081 | xargs kill -9
 rm -rf node_modules package-lock.json yarn.lock
 npm install
 ```
-
-## 🛠️ Development
-
-### Code Quality
-- TypeScript for type safety
-- ESLint for code linting
-- Jest for testing
-- Git hooks for pre-commit checks
-
-### Architecture
-- Modular component structure
-- Custom hooks for business logic
-- Styled-components for theming
-- Platform-specific optimizations
-
-## 📄 License
-
-This project is part of a React Native coding assessment.
-
----
-
-**Built with React Native and ❤️**
