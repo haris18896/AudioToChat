@@ -24,6 +24,10 @@ if (Platform.OS !== 'web') {
     if (!Sound || typeof Sound !== 'function') {
       console.warn('Sound import failed or is not a constructor');
       Sound = null;
+    } else {
+      // Initialize react-native-sound
+      Sound.setCategory('Playback');
+      console.log('react-native-sound initialized successfully');
     }
   } catch (error) {
     console.warn('react-native-sound not available:', error);
@@ -131,14 +135,27 @@ export const useAudioPlayer = (
       }
 
       // Create Sound instance with the audio source
-      const sound = new Sound(soundSource, undefined, (error: any) => {
+      // For local files, pass null as the second parameter (basePath)
+      // For remote files, pass undefined
+      const basePath =
+        typeof soundSource === 'string' && !soundSource.startsWith('http')
+          ? Sound.MAIN_BUNDLE
+          : undefined;
+
+      const sound = new Sound(soundSource, basePath, (error: any) => {
         if (error) {
           console.error('Error loading audio:', error);
+          console.error('Audio source:', soundSource);
+          console.error('Base path:', basePath);
           return;
         }
 
         const duration = sound.getDuration();
-        console.log('check duration...', duration);
+        console.log(
+          'Audio loaded successfully. Duration:',
+          duration,
+          'seconds',
+        );
         setAudioPlayer(prev => ({
           ...prev,
           isLoaded: true,
@@ -232,11 +249,26 @@ export const useAudioPlayer = (
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
-    if (!soundRef.current || !audioPlayer.isLoaded) return;
+    console.log(
+      'togglePlayPause called. soundRef:',
+      !!soundRef.current,
+      'isLoaded:',
+      audioPlayer.isLoaded,
+    );
+
+    if (!soundRef.current) {
+      console.error('No sound reference available');
+      return;
+    }
+
+    if (!audioPlayer.isLoaded) {
+      console.error('Audio not loaded yet');
+      return;
+    }
 
     try {
       if (audioPlayer.isPlaying) {
-        console.log('Pausing audio...', soundRef.current);
+        console.log('Pausing audio...');
         soundRef.current.pause();
         setAudioPlayer(prev => ({ ...prev, isPlaying: false }));
 
@@ -246,21 +278,32 @@ export const useAudioPlayer = (
           updateIntervalRef.current = null;
         }
       } else {
-        console.log('Playing audio...', soundRef.current);
+        console.log('Playing audio...');
+
+        // Reset playback speed to normal when resuming
+        if (soundRef.current.setSpeed) {
+          soundRef.current.setSpeed(1.0);
+        }
+
         // If we're at the end, restart from beginning
         if (audioPlayer.currentTime >= audioPlayer.totalTime) {
           await seekTo(0);
         }
 
         soundRef.current.play((success: boolean) => {
+          console.log('Play callback - success:', success);
           if (success) {
             console.log('Audio play success, setting isPlaying to true');
-            setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
+            setAudioPlayer(prev => ({
+              ...prev,
+              isPlaying: true,
+              playbackRate: 1.0,
+            }));
 
             // Start time updates when playing begins
             startTimeUpdates();
           } else {
-            console.error('Failed to play audio');
+            console.error('Failed to play audio - success was false');
           }
         });
       }
@@ -316,24 +359,49 @@ export const useAudioPlayer = (
     }
   }, [audioPlayer.currentPhraseIndex, phraseTimings, seekTo]);
 
-  // Repeat: Reset audio clip to beginning
+  // Repeat: Play only the last spoken phrase at 0.75x speed
   const repeat = useCallback(async () => {
-    if (!soundRef.current) return;
+    if (!soundRef.current || phraseTimings.length === 0) return;
 
     try {
-      await seekTo(0);
+      // Find the last phrase that has been played
+      const currentIndex = audioPlayer.currentPhraseIndex;
+      const lastPlayedIndex = currentIndex > 0 ? currentIndex : 0;
+      const lastPhrase = phraseTimings[lastPlayedIndex];
 
-      if (!audioPlayer.isPlaying) {
-        soundRef.current.play((success: boolean) => {
-          if (success) {
-            setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
-          }
-        });
+      if (lastPhrase) {
+        // Set playback speed to 0.75x
+        if (soundRef.current.setSpeed) {
+          soundRef.current.setSpeed(0.75);
+        }
+
+        // Seek to the beginning of the last phrase
+        await seekTo(lastPhrase.startTime);
+
+        // Start playing if not already playing
+        if (!audioPlayer.isPlaying) {
+          soundRef.current.play((success: boolean) => {
+            if (success) {
+              setAudioPlayer(prev => ({
+                ...prev,
+                isPlaying: true,
+                playbackRate: 0.75,
+              }));
+            }
+          });
+        } else {
+          setAudioPlayer(prev => ({ ...prev, playbackRate: 0.75 }));
+        }
       }
     } catch (error) {
-      console.error('Error resetting audio:', error);
+      console.error('Error repeating last phrase:', error);
     }
-  }, [audioPlayer.isPlaying, seekTo]);
+  }, [
+    audioPlayer.isPlaying,
+    audioPlayer.currentPhraseIndex,
+    phraseTimings,
+    seekTo,
+  ]);
 
   return {
     audioPlayer,

@@ -71,13 +71,6 @@ export const useWebAudioPlayer = (
       audioPlayer.currentTime,
     );
 
-    console.log('Audio player state update:', {
-      currentTime: audioPlayer.currentTime,
-      currentPhraseIndex,
-      visibleMessagesCount: updatedVisible.length,
-      totalMessages: messages.length,
-    });
-
     setVisibleMessages(updatedVisible);
     setAudioPlayer(prev => ({ ...prev, currentPhraseIndex }));
 

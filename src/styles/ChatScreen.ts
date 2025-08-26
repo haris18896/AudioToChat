@@ -10,5 +10,4 @@ export const ChatContainer = styled.View`
   flex: 1;
   padding-horizontal: ${spacing.md}px;
   padding-vertical: ${spacing.md}px;
-  padding-bottom: 120px;
 `;

@@ -11,10 +11,6 @@ export const MediaPlayerContainer = styled.View`
   padding: ${spacing.md}px;
   border-top-width: 1px;
   border-top-color: ${colors.border.light};
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
   ${shadows.lg}
 `;
 
@@ -27,9 +23,8 @@ export const ControlsContainer = styled.View`
   padding-vertical: 10px;
   width: 100%;
 `;
-
 export const PlayPauseButton = styled.TouchableOpacity<{ disabled?: boolean }>`
-  background-color: ${({ disabled }) =>
+  background-color: ${({ disabled }: { disabled?: boolean }) =>
     disabled ? colors.border.light : colors.primary.main};
   width: 60px;
   height: 60px;
@@ -37,9 +32,9 @@ export const PlayPauseButton = styled.TouchableOpacity<{ disabled?: boolean }>`
   align-items: center;
   justify-content: center;
   margin-horizontal: 20px;
-  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  opacity: ${({ disabled }: { disabled?: boolean }) => (disabled ? 0.5 : 1)};
   border-width: 2px;
-  border-color: ${({ disabled }) =>
+  border-color: ${({ disabled }: { disabled?: boolean }) =>
     disabled ? colors.border.medium : colors.primary.main};
   elevation: 4;
   shadow-color: #000;
@@ -68,15 +63,16 @@ export const ProgressContainer = styled.View`
 export const ProgressBar = styled.View`
   height: 6px;
   flex: 1;
-  background-color: ${colors.border.light};
+  background-color: ${colors.border.medium};
   border-radius: ${borderRadius.round}px;
   margin-horizontal: ${spacing.md}px;
   overflow: hidden;
+  border: 1px solid ${colors.border.dark};
 `;
 
 export const ProgressFill = styled.View<{ progress: number }>`
   height: 100%;
-  width: ${({ progress }) => progress}%;
+  width: ${({ progress }: { progress: number }) => progress}%;
   background-color: ${colors.secondary.main};
   border-radius: ${borderRadius.round}px;
 `;
@@ -93,12 +89,12 @@ export const ControlButton = styled.TouchableOpacity<{ isPrimary?: boolean }>`
   width: 48px;
   height: 48px;
   border-radius: ${borderRadius.round}px;
-  background-color: ${({ isPrimary }) =>
+  background-color: ${({ isPrimary }: { isPrimary?: boolean }) =>
     isPrimary ? colors.primary.main : colors.background.primary};
   justify-content: center;
   align-items: center;
   border-width: 1px;
-  border-color: ${({ isPrimary }) =>
+  border-color: ${({ isPrimary }: { isPrimary?: boolean }) =>
     isPrimary ? colors.primary.main : colors.border.medium};
   ${shadows.sm}
 `;

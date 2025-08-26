@@ -1,97 +1,223 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# AudioToChat - React Native Audio Player with Transcript
 
-# Getting Started
+A React Native application that plays audio files while displaying and highlighting synchronized transcript text in a chat-like interface.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 📱 Features
 
-## Step 1: Start Metro
+- **Audio Playback Controls**: Play, Pause, Rewind, Forward, and Repeat functionality
+- **Synchronized Transcript**: Chat-style display of spoken phrases with real-time highlighting
+- **Cross-Platform**: Runs on Web, iOS, and Android
+- **Phrase Navigation**: Skip to previous/next phrases during playback
+- **Slow Repeat**: Repeat the last spoken phrase at 0.75x speed for better comprehension
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 🚀 Getting Started
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Prerequisites
 
-```sh
-# Using npm
-npm start
+- Node.js (>= 18.0.0)
+- React Native development environment set up
+- For iOS: Xcode and CocoaPods
+- For Android: Android Studio and SDK
 
-# OR using Yarn
-yarn start
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd AudioToChat
+   ```
+
+2. **Install dependencies**
+   ```bash
+   yarn install
+   ```
+
+3. **Install iOS dependencies** (iOS only)
+   ```bash
+   cd ios
+   bundle exec pod install
+   cd ..
+   ```
+
+## 🏃‍♂️ Running the Application
+
+### Web Version
+```bash
+yarn web
 ```
+The web version will be available at `http://localhost:3000`
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
+### iOS Version
+```bash
 yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### Android Version
+```bash
+yarn android
+```
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 📁 Project Structure
 
-## Step 3: Modify your app
+```
+AudioToChat/
+├── src/
+│   ├── components/          # React components
+│   │   ├── ChatScreen.tsx   # Main chat interface
+│   │   ├── Message.tsx      # Individual message component
+│   │   └── MediaPlayer.tsx  # Audio player controls
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useAudioPlayer.ts    # Main audio player logic
+│   │   └── useWebAudioPlayer.ts # Web-specific audio logic
+│   ├── styles/              # Styled components
+│   ├── utils/               # Utility functions
+│   │   ├── transcriptionUtils.ts # Transcript processing
+│   │   └── timeUtils.ts     # Time formatting utilities
+│   ├── assets/              # Static assets
+│   │   └── json/            # Sample transcript data
+│   └── types/               # TypeScript type definitions
+├── ios/                     # iOS-specific files
+├── android/                 # Android-specific files
+└── public/                  # Web static files
+```
 
-Now that you have successfully run the app, let's make changes!
+## 🎵 Audio Controls
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+| Button | Function |
+|--------|----------|
+| **Play** | Start audio playback from current position |
+| **Pause** | Pause audio playback |
+| **Rewind** | Go to beginning of current phrase (or previous phrase if at start) |
+| **Forward** | Skip to beginning of next phrase |
+| **Repeat** | Replay the last spoken phrase at 0.75x speed |
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 📝 Transcript Format
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+The application expects transcript metadata in the following JSON format:
 
-## Congratulations! :tada:
+```json
+{
+  "pause": 250,
+  "speakers": [
+    {
+      "name": "Speaker1",
+      "phrases": [
+        {
+          "words": "This is the spoken text",
+          "time": 2000
+        }
+      ]
+    }
+  ]
+}
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+- `pause`: Duration (ms) of silence after each phrase
+- `time`: Duration (ms) of the phrase in audio
+- Audio plays phrases in interleaved order between speakers
 
-### Now what?
+## 🎨 UI Features
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+- **Real-time Highlighting**: Current phrase is highlighted during playback
+- **Chat Interface**: Messages displayed in a conversational format
+- **Responsive Design**: Adapts to different screen sizes
+- **Progress Bar**: Visual indication of playback progress
+- **Time Display**: Shows current time and total duration
 
-# Troubleshooting
+## 🔧 Technical Details
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+### Audio Playback
+- **Mobile**: Uses `react-native-sound` for native audio playback
+- **Web**: Uses `useWebAudioPlayer` with HTML5 Audio API
+- **Synchronization**: 50ms interval updates for precise phrase timing
 
-# Learn More
+### State Management
+- React hooks for audio state management
+- Real-time phrase tracking and highlighting
+- Efficient message visibility calculations
 
-To learn more about React Native, take a look at the following resources:
+### Styling
+- `styled-components` for consistent theming
+- Platform-specific optimizations
+- Modern, clean UI design
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## 🧪 Testing
+
+Run the test suite:
+```bash
+yarn test
+```
+
+## 📦 Building for Production
+
+### Web Build
+```bash
+yarn build:web
+```
+
+### iOS Build
+1. Open `ios/AudioToChat.xcworkspace` in Xcode
+2. Select your target device/simulator
+3. Build and run (⌘+R)
+
+### Android Build
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+## 🐛 Troubleshooting
+
+### iOS Build Issues
+```bash
+# Clean and reinstall pods
+cd ios
+rm -rf Pods Podfile.lock
+bundle exec pod install
+cd ..
+```
+
+### Metro/Web Port Conflicts
+```bash
+# Kill processes on port 3000/8081
+lsof -ti:3000 | xargs kill -9
+lsof -ti:8081 | xargs kill -9
+```
+
+### Node Modules Issues
+```bash
+# Clean reinstall
+rm -rf node_modules yarn.lock
+yarn install
+```
+
+## 📋 Requirements Fulfilled
+
+✅ **Audio Player**: Play, Pause, Rewind, Forward, Repeat controls  
+✅ **Transcript Display**: Phrases shown in order with highlighting  
+✅ **Phrase Navigation**: Skip between phrases during playback  
+✅ **Slow Repeat**: Last phrase replayed at 0.75x speed  
+✅ **Cross-Platform**: Web, iOS, Android support  
+✅ **Proper Metadata**: Supports specified JSON format  
+
+## 🛠️ Development
+
+### Code Quality
+- TypeScript for type safety
+- ESLint for code linting
+- Prettier for code formatting
+- Git hooks for pre-commit checks
+
+### Architecture
+- Modular component structure
+- Custom hooks for business logic
+- Styled-components for theming
+- Platform-specific optimizations
+
+## 📄 License
+
+This project is part of a React Native coding assessment.
+
+---
+
+**Built with React Native 0.81.0 and ❤️**

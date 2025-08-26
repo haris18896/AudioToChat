@@ -14,15 +14,9 @@ import {
 
 interface MessageProps {
   message: ChatMessage;
-  isNew?: boolean;
-  delay?: number;
 }
 
-const Message: React.FC<MessageProps> = ({
-  message,
-  isNew = false,
-  delay = 0,
-}) => {
+const Message: React.FC<MessageProps> = ({ message }) => {
   const align = message.sender === 'john' ? 'left' : 'right';
   const senderName = message.sender === 'john' ? 'John' : 'Jack';
 
@@ -33,33 +27,11 @@ const Message: React.FC<MessageProps> = ({
   const highlightAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (isNew) {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(20);
-      scaleAnim.setValue(0.8);
-
-      // Animate in with a delay for staggered effect
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-        ]).start();
-      }, delay);
-    }
-  }, [isNew, fadeAnim, slideAnim, scaleAnim, delay]);
+    // Set initial values without animation for immediate visibility
+    fadeAnim.setValue(1);
+    slideAnim.setValue(0);
+    scaleAnim.setValue(1);
+  }, [fadeAnim, slideAnim, scaleAnim]);
 
   useEffect(() => {
     if (message.isCurrent) {
