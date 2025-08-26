@@ -159,9 +159,11 @@ export const useUnifiedAudioPlayer = (
       const audio = new Audio(audioUri as string);
 
       audio.addEventListener('loadedmetadata', () => {
+        console.log('Audio metadata loaded, duration:', audio.duration);
         setAudioPlayer(prev => ({
           ...prev,
           isLoaded: true,
+          totalTime: audio.duration * 1000, // Convert to milliseconds
         }));
 
         const handleTimeUpdate = () => {
@@ -192,6 +194,15 @@ export const useUnifiedAudioPlayer = (
           currentTime: 0,
           currentPhraseIndex: 0,
         }));
+      });
+
+      audio.addEventListener('error', e => {
+        console.error('Audio loading error:', e);
+        console.error('Audio error details:', audio.error);
+      });
+
+      audio.addEventListener('canplay', () => {
+        console.log('Audio can start playing');
       });
 
       audioRef.current = audio;
