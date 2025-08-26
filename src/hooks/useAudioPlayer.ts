@@ -268,9 +268,8 @@ export const useAudioPlayer = (
 
     try {
       if (audioPlayer.isPlaying) {
-        console.log('Pausing audio...');
-        soundRef.current.pause();
         setAudioPlayer(prev => ({ ...prev, isPlaying: false }));
+        soundRef.current.pause();
 
         // Stop time updates when pausing
         if (updateIntervalRef.current) {
@@ -278,8 +277,6 @@ export const useAudioPlayer = (
           updateIntervalRef.current = null;
         }
       } else {
-        console.log('Playing audio...');
-
         // Reset playback speed to normal when resuming
         if (soundRef.current.setSpeed) {
           soundRef.current.setSpeed(1.0);
@@ -289,6 +286,11 @@ export const useAudioPlayer = (
         if (audioPlayer.currentTime >= audioPlayer.totalTime) {
           await seekTo(0);
         }
+        setAudioPlayer(prev => ({
+          ...prev,
+          isPlaying: true,
+          playbackRate: 1.0,
+        }));
 
         soundRef.current.play((success: boolean) => {
           console.log('Play callback - success:', success);

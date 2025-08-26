@@ -97,7 +97,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           disabled={!audioPlayer.isLoaded}
         >
           <PlayPauseButtonText>
-            {audioPlayer.isPlaying ? '⏸️' : '▶️'}
+            {audioPlayer?.isPlaying ? '⏸️' : '▶️'}
           </PlayPauseButtonText>
         </PlayPauseButton>
 
