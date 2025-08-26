@@ -11,7 +11,11 @@ export const MediaPlayerContainer = styled.View`
   padding: ${spacing.md}px;
   border-top-width: 1px;
   border-top-color: ${colors.border.light};
-  ${shadows.lg}
+  shadow-color: ${colors.text.primary};
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.05;
+  shadow-radius: 4px;
+  elevation: 1;
 `;
 
 export const ControlsContainer = styled.View`
