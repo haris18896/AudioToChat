@@ -15,7 +15,7 @@
       "dest": "/index.html"
     }
   ],
-  "buildCommand": "yarn build:web",
+  "buildCommand": "yarn vercel-build",
   "outputDirectory": "dist",
   "framework": null,
   "installCommand": "yarn install"
