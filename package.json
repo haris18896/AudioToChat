@@ -15,7 +15,8 @@
     "test:integration": "jest __tests__/integration",
     "web": "webpack serve --open",
     "build:web": "webpack --config webpack.config.prod.js",
-    "build:web:dev": "webpack --mode=development"
+    "build:web:dev": "webpack --mode=development",
+    "vercel-build": "webpack --config webpack.config.prod.js"
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.81.0",
