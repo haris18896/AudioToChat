@@ -150,8 +150,6 @@ export const useAudioPlayer = (
     }
   }, [audioUri]);
 
-  console.log('soundRef.current : ', soundRef.current);
-
   useEffect(() => {
     loadAudio();
     return () => {
