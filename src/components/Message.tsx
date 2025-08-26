@@ -6,10 +6,10 @@ import { ChatMessage } from '../types/chat';
 
 // ** Custom Components
 import {
+  SenderName,
+  MessageText,
   MessageBubble,
   MessageContainer,
-  MessageText,
-  SenderName,
 } from '../styles/Message';
 
 interface MessageProps {

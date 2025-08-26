@@ -2,9 +2,9 @@ import styled from 'styled-components/native';
 import {
   colors,
   spacing,
-  borderRadius,
   shadows,
   typography,
+  borderRadius,
 } from '../@core/infrustructure/theme';
 
 export const MessageContainer = styled.View<{ align: 'left' | 'right' }>`
