@@ -9,6 +9,7 @@ module.exports = {
     filename: '[name].[contenthash].js',
     publicPath: '',
     clean: true,
+    chunkFilename: '[name].[contenthash].chunk.js',
   },
   module: {
     rules: [
