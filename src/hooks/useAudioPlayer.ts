@@ -304,29 +304,24 @@ export const useAudioPlayer = (
     }
   }, [audioPlayer.currentPhraseIndex, phraseTimings, seekTo]);
 
-  // Repeat: Repeat last spoken phrase
+  // Repeat: Reset audio clip to beginning
   const repeat = useCallback(async () => {
-    if (!lastSpokenPhrase || !soundRef.current) return;
+    if (!soundRef.current) return;
 
     try {
-      // Seek to the beginning of the last spoken phrase
-      const phrase = phraseTimings.find(p => p.id === lastSpokenPhrase.id);
-      if (phrase) {
-        await seekTo(phrase.startTime);
+      await seekTo(0);
 
-        // Play the audio if not already playing
-        if (!audioPlayer.isPlaying) {
-          soundRef.current.play((success: boolean) => {
-            if (success) {
-              setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
-            }
-          });
-        }
+      if (!audioPlayer.isPlaying) {
+        soundRef.current.play((success: boolean) => {
+          if (success) {
+            setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
+          }
+        });
       }
     } catch (error) {
-      console.error('Error repeating phrase:', error);
+      console.error('Error resetting audio:', error);
     }
-  }, [lastSpokenPhrase, phraseTimings, audioPlayer.isPlaying, seekTo]);
+  }, [audioPlayer.isPlaying, seekTo]);
 
   return {
     audioPlayer,
