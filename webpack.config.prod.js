@@ -57,6 +57,14 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
     alias: {
       'react-native$': 'react-native-web',
+      // Exclude packages from web builds
+      'react-native-sound': false,
+    },
+    fallback: {
+      // Provide fallbacks for Node.js modules that react-native-sound might use
+      fs: false,
+      path: false,
+      os: false,
     },
   },
   plugins: [
