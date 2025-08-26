@@ -11,6 +11,7 @@ import { Container, ChatContainer } from '../styles/ChatScreen';
 
 // ** Data
 import transcriptionData from '../assets/json/example_audio.json';
+import { useWebAudioPlayer } from '../hooks/useWebAudioPlayer';
 
 const ChatScreen: React.FC = () => {
   const [newlyVisibleMessages, setNewlyVisibleMessages] = useState<Set<string>>(
@@ -25,7 +26,8 @@ const ChatScreen: React.FC = () => {
       ? '/asset/audio/example_audio.mp3'
       : 'https://file.notion.so/f/f/24407104-f114-40ec-91ac-25f0ac0ac7a6/66b62104-67d0-48a9-956a-2534f0c1f52a/example_audio.mp3?table=block&id=2332fabc-bb3f-8008-9a1b-f5f2f0b3e847&spaceId=24407104-f114-40ec-91ac-25f0ac0ac7a6&expirationTimestamp=1756209600000&signature=BUsDtkA4IX3dWErueU_JKORHJ1U594odOEgctcTzrIs&downloadName=example_audio.mp3';
 
-  const audioPlayerHook = useAudioPlayer;
+  const audioPlayerHook =
+    Platform.OS === 'web' ? useWebAudioPlayer : useAudioPlayer;
 
   const {
     audioPlayer,
