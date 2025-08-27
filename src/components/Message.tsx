@@ -78,33 +78,27 @@ const Message: React.FC<MessageProps> = ({ message }) => {
     transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
   };
 
-  const highlightStyles = {
-    shadowOpacity: highlightAnim,
-  };
-
   return (
     <Animated.View style={[animationStyles]}>
-      <Animated.View style={highlightStyles}>
-        <MessageContainer align={align}>
-          <SenderName
-            isCurrent={message.isCurrent}
-            isHighlighted={message.isHighlighted}
-            sender={message.sender}
-          >
-            {senderName}
-          </SenderName>
-          <MessageBubble
-            sender={message.sender}
-            isHighlighted={message.isHighlighted}
-            isSuggested={message.isSuggested}
-            isCurrent={message.isCurrent}
-          >
-            <MessageText sender={message.sender} isCurrent={message.isCurrent}>
-              {message.text}
-            </MessageText>
-          </MessageBubble>
-        </MessageContainer>
-      </Animated.View>
+      <MessageContainer align={align}>
+        <SenderName
+          isCurrent={message.isCurrent}
+          isHighlighted={message.isHighlighted}
+          sender={message.sender}
+        >
+          {senderName}
+        </SenderName>
+        <MessageBubble
+          sender={message.sender}
+          isHighlighted={message.isHighlighted}
+          isSuggested={message.isSuggested}
+          isCurrent={message.isCurrent}
+        >
+          <MessageText sender={message.sender} isCurrent={message.isCurrent}>
+            {message.text}
+          </MessageText>
+        </MessageBubble>
+      </MessageContainer>
     </Animated.View>
   );
 };
