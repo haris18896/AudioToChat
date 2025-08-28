@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { SafeAreaView, StyleSheet } from 'react-native';
-import ChatScreen from './src/components/ChatScreen';
+import { ChatScreen } from './src/components';
 
 function App() {
   return (

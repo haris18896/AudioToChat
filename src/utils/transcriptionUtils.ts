@@ -1,9 +1,19 @@
 import { TranscriptionData, PhraseTiming, ChatMessage } from '../types/chat';
 
+// Cache for processed transcription data
+const transcriptionCache = new Map<string, PhraseTiming[]>();
+
 // Processes transcription data to create proper phrase timings
 export const processTranscriptionData = (
   data: TranscriptionData,
 ): PhraseTiming[] => {
+  // Create a cache key based on data content
+  const cacheKey = JSON.stringify(data);
+
+  if (transcriptionCache.has(cacheKey)) {
+    return transcriptionCache.get(cacheKey)!;
+  }
+
   const phraseTimings: PhraseTiming[] = [];
   let currentTime = 0;
   let phraseId = 1;
@@ -35,6 +45,8 @@ export const processTranscriptionData = (
     });
   }
 
+  // Cache the result
+  transcriptionCache.set(cacheKey, phraseTimings);
   return phraseTimings;
 };
 
@@ -53,11 +65,45 @@ export const phraseTimingsToMessages = (
   }));
 };
 
+// Binary search for better performance on large datasets
+const binarySearchPhraseIndex = (
+  phraseTimings: PhraseTiming[],
+  currentTime: number,
+): number => {
+  let left = 0;
+  let right = phraseTimings.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const phrase = phraseTimings[mid];
+
+    if (currentTime >= phrase.startTime && currentTime < phrase.endTime) {
+      return mid;
+    }
+
+    if (currentTime < phrase.startTime) {
+      right = mid - 1;
+    } else {
+      left = mid + 1;
+    }
+  }
+
+  return 0;
+};
+
 // Gets the current phrase index based on current time
 export const getCurrentPhraseIndex = (
   phraseTimings: PhraseTiming[],
   currentTime: number,
 ): number => {
+  if (phraseTimings.length === 0) return 0;
+
+  // Use binary search for better performance on large datasets
+  if (phraseTimings.length > 100) {
+    return binarySearchPhraseIndex(phraseTimings, currentTime);
+  }
+
+  // Linear search for smaller datasets
   for (let i = 0; i < phraseTimings.length; i++) {
     if (
       currentTime >= phraseTimings[i].startTime &&

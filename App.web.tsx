@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { GlobalStyles } from './src/styles/globalStyles';
-import ChatScreen from './src/components/ChatScreen';
+import { ChatScreen } from './src/components';
 
 function App() {
   return (

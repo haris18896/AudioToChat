@@ -1,6 +1,6 @@
 {
   "name": "AudioToChat",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "homepage": ".",
   "scripts": {
@@ -17,7 +17,8 @@
     "web": "webpack serve --open",
     "build:web": "webpack --config webpack.config.prod.js",
     "build:web:dev": "webpack --mode=development",
-    "vercel-build": "webpack --config webpack.config.prod.js"
+    "vercel-build": "webpack --config webpack.config.prod.js",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.81.0",
@@ -26,8 +27,9 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.0",
+    "react-native-gesture-handler": "^2.28.0",
     "react-native-safe-area-context": "^5.5.2",
-    "react-native-sound": "^0.12.0",
+    "react-native-video": "^6.16.1",
     "react-native-web": "^0.21.1",
     "styled-components": "^6.1.19"
   },
@@ -65,6 +67,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.6.3",
     "jest-environment-jsdom": "^30.0.5",
+    "patch-package": "^8.0.0",
     "prettier": "2.8.8",
     "react-test-renderer": "19.1.0",
     "style-loader": "^4.0.0",

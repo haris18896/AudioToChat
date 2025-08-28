@@ -155,7 +155,7 @@ The application expects transcript metadata in the following JSON format:
 ## 🔧 Technical Details
 
 ### Audio Playback
-- **Mobile**: Uses `react-native-sound` for native audio playback
+- **Mobile**: Uses `react-native-video` for native audio playback
 - **Web**: Uses HTML5 Audio API
 - **Synchronization**: 50ms interval updates for precise phrase timing
 

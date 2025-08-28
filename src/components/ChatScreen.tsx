@@ -1,92 +1,87 @@
-import React, { useCallback } from 'react';
-import { ScrollView, Platform, StyleSheet, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-// ** Utils
+// Utils
 import { useUnifiedAudioPlayer } from '../hooks/useUnifiedAudioPlayer';
 
-// ** Custom Components
+// Custom Components
 import Message from './Message';
 import MediaPlayer from './MediaPlayer';
 import { Container, ChatContainer } from '../styles/ChatScreen';
 
-// ** Data
+// Data
 import transcriptionData from '../assets/json/example_audio.json';
+import { isWeb } from '../utils/responsive';
 
 const ChatScreen: React.FC = () => {
-  console.log('ChatScreen rendering, Platform.OS:', Platform.OS);
-
-  // Audio file path - This can be get via an API call
-  const audioUri =
-    Platform.OS === 'web'
-      ? '/assets/audio/example_audio.mp3'
-      : 'example_audio.mp3'; // Use local bundled audio file for mobile
-
-  console.log('ChatScreen audioUri:', audioUri);
+  // Audio file path
+  const audioUri = isWeb
+    ? '/assets/audio/example_audio.mp3'
+    : 'https://file.notion.so/f/f/24407104-f114-40ec-91ac-25f0ac0ac7a6/66b62104-67d0-48a9-956a-2534f0c1f52a/example_audio.mp3?table=block&id=2332fabc-bb3f-8008-9a1b-f5f2f0b3e847&spaceId=24407104-f114-40ec-91ac-25f0ac0ac7a6&expirationTimestamp=1756375200000&signature=M503SoQhWRf8uv5LIL-PIwkNZC5VFTkAu6DwkZOUVdg&downloadName=example_audio.mp3';
 
   const {
     audioPlayer,
     messages,
     togglePlayPause,
-    seekTo,
     rewind,
     fastForward,
     repeat,
+    // Video-specific props
+    videoRef,
+    onLoad,
+    onProgress,
+    onError,
+    onEnd,
   } = useUnifiedAudioPlayer(audioUri, transcriptionData);
 
-  const handleTogglePlayPause = useCallback(() => {
-    togglePlayPause();
-  }, [togglePlayPause]);
-
-  const handleSeek = useCallback(
-    (time: number) => {
-      seekTo(time);
-    },
-    [seekTo],
+  // Memoize platform-specific content to prevent unnecessary re-renders
+  const webContent = useMemo(
+    () => (
+      <View style={styles.webContentContainer}>
+        <ChatContainer>
+          {messages.map(message => (
+            <Message key={message.id} message={message} />
+          ))}
+        </ChatContainer>
+      </View>
+    ),
+    [messages],
   );
 
-  const handleRewind = useCallback(() => {
-    rewind();
-  }, [rewind]);
-
-  const handleFastForward = useCallback(() => {
-    fastForward();
-  }, [fastForward]);
-
-  const handleRepeat = useCallback(() => {
-    repeat();
-  }, [repeat]);
+  const mobileContent = useMemo(
+    () => (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.mobileContentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <ChatContainer>
+          {messages.map(message => (
+            <Message key={message.id} message={message} />
+          ))}
+        </ChatContainer>
+      </ScrollView>
+    ),
+    [messages],
+  );
 
   return (
     <Container>
-      {Platform.OS === 'web' ? (
-        <View style={styles.webContentContainer}>
-          <ChatContainer>
-            {messages.map(message => (
-              <Message key={message.id} message={message} />
-            ))}
-          </ChatContainer>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.mobileContentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <ChatContainer>
-            {messages.map(message => (
-              <Message key={message.id} message={message} />
-            ))}
-          </ChatContainer>
-        </ScrollView>
-      )}
+      {isWeb ? webContent : mobileContent}
 
       <MediaPlayer
         audioPlayer={audioPlayer}
-        onTogglePlayPause={handleTogglePlayPause}
-        onSeek={handleSeek}
-        onRewind={handleRewind}
-        onFastForward={handleFastForward}
-        onRepeat={handleRepeat}
+        onTogglePlayPause={togglePlayPause}
+        onRewind={rewind}
+        onFastForward={fastForward}
+        onRepeat={repeat}
+        // Video-specific props
+        audioUri={audioUri}
+        videoRef={videoRef}
+        onLoad={onLoad}
+        onProgress={onProgress}
+        onError={onError}
+        onEnd={onEnd}
       />
     </Container>
   );

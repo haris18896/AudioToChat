@@ -100,7 +100,10 @@ export const ControlButton = styled.TouchableOpacity<{ isPrimary?: boolean }>`
   border-width: 1px;
   border-color: ${({ isPrimary }: { isPrimary?: boolean }) =>
     isPrimary ? colors.primary.main : colors.border.medium};
-  ${shadows.sm}
+  elevation: ${shadows.sm.elevation};
+  shadow-color: ${shadows.sm.shadowColor};
+  shadow-opacity: ${shadows.sm.shadowOpacity};
+  shadow-radius: ${shadows.sm.shadowRadius}px;
 `;
 
 export const PlayPauseButtonText = styled.Text`

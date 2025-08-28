@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { Animated, Platform } from 'react-native';
+import React, { useRef, useEffect, memo } from 'react';
+import { Animated } from 'react-native';
 
 // ** Types
 import { ChatMessage } from '../types/chat';
@@ -11,12 +11,13 @@ import {
   MessageBubble,
   MessageContainer,
 } from '../styles/Message';
+import { isWeb } from '../utils/responsive';
 
 interface MessageProps {
   message: ChatMessage;
 }
 
-const Message: React.FC<MessageProps> = ({ message }) => {
+const Message: React.FC<MessageProps> = memo(({ message }) => {
   const align = message.sender === 'john' ? 'left' : 'right';
   const senderName = message.sender === 'john' ? 'John' : 'Jack';
 
@@ -39,7 +40,7 @@ const Message: React.FC<MessageProps> = ({ message }) => {
       Animated.timing(highlightAnim, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: !isWeb,
       }).start();
 
       // Add subtle pulse effect
@@ -48,12 +49,12 @@ const Message: React.FC<MessageProps> = ({ message }) => {
           Animated.timing(highlightAnim, {
             toValue: 1.1,
             duration: 1000,
-            useNativeDriver: Platform.OS !== 'web',
+            useNativeDriver: !isWeb,
           }),
           Animated.timing(highlightAnim, {
             toValue: 1,
             duration: 1000,
-            useNativeDriver: Platform.OS !== 'web',
+            useNativeDriver: !isWeb,
           }),
         ]),
       );
@@ -67,7 +68,7 @@ const Message: React.FC<MessageProps> = ({ message }) => {
       Animated.timing(highlightAnim, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: !isWeb,
       }).start();
     }
   }, [message.isCurrent, highlightAnim]);
@@ -101,6 +102,6 @@ const Message: React.FC<MessageProps> = ({ message }) => {
       </MessageContainer>
     </Animated.View>
   );
-};
+});
 
 export default Message;

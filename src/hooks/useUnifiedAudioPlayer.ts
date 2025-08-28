@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { Platform } from 'react-native';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-// && Utils
+// Types
 import {
   ChatMessage,
   PhraseTiming,
@@ -15,31 +15,25 @@ import {
   phraseTimingsToMessages,
   processTranscriptionData,
 } from '../utils/transcriptionUtils';
+import { isWeb } from '../utils/responsive';
 
-// only import Sound on Mobile app
-let Sound: any = null;
-if (Platform.OS !== 'web') {
-  try {
-    Sound = require('react-native-sound').default;
-    if (!Sound || typeof Sound !== 'function') {
-      Sound = null;
-    } else {
-      Sound.setCategory('Playback');
-    }
-  } catch (error) {
-    Sound = null;
-  }
-}
+// Video types
+type VideoRef = any;
+type OnLoadData = {
+  duration: number;
+  currentTime: number;
+};
+type OnProgressData = {
+  currentTime: number;
+  playableDuration: number;
+  seekableDuration: number;
+};
 
 export const useUnifiedAudioPlayer = (
   audioUri: string | number,
   transcriptionData: TranscriptionData,
-  _audioFileInfo?: { bundlePath: string; fileName: string },
 ) => {
-  console.log('useUnifiedAudioPlayer called with:', {
-    audioUri,
-    isWeb: Platform.OS === 'web',
-  });
+  // Core audio state
   const [audioPlayer, setAudioPlayer] = useState<AudioPlayerState>({
     isPlaying: false,
     currentTime: 0,
@@ -50,145 +44,92 @@ export const useUnifiedAudioPlayer = (
     currentPhraseIndex: 0,
   });
 
+  // Message/transcription state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [visibleMessages, setVisibleMessages] = useState<ChatMessage[]>([]);
   const [phraseTimings, setPhraseTimings] = useState<PhraseTiming[]>([]);
-  const [lastSpokenPhrase, setLastSpokenPhrase] = useState<ChatMessage | null>(
-    null,
-  );
 
-  // Native audio refs (mobile)
-  const soundRef = useRef<any>(null);
-  const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isRepeatingRef = useRef<boolean>(false);
-  const repeatEndTimeRef = useRef<number>(0);
-
-  // Web audio refs
+  // Platform-specific refs
+  const videoRef = useRef<VideoRef>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timeUpdateHandlerRef = useRef<(() => void) | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const isWeb = Platform.OS === 'web';
+  // Cleanup refs for timeouts
+  const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
 
-  // Process transcription data into phrase timings
-  useEffect(() => {
-    const timings = processTranscriptionData(transcriptionData);
-    setPhraseTimings(timings);
-
-    const chatMessages = phraseTimingsToMessages(timings);
-    setMessages(chatMessages);
-
-    const totalDuration =
-      timings.length > 0 ? timings[timings.length - 1].endTime : 0;
-
-    setAudioPlayer(prev => ({
-      ...prev,
-      totalTime: totalDuration,
-    }));
+  // Memoize processed transcription data
+  const processedTimings = useMemo(() => {
+    return processTranscriptionData(transcriptionData);
   }, [transcriptionData]);
 
-  // Update visible messages and current phrase based on current time
+  // Memoize messages
+  const processedMessages = useMemo(() => {
+    return phraseTimingsToMessages(processedTimings);
+  }, [processedTimings]);
+
+  // Memoize total duration
+  const totalDuration = useMemo(() => {
+    return processedTimings.length > 0
+      ? processedTimings[processedTimings.length - 1].endTime
+      : 0;
+  }, [processedTimings]);
+
+  // Cleanup function for timeouts
+  const clearAllTimeouts = useCallback(() => {
+    timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+    timeoutRefs.current.clear();
+  }, []);
+
+  // Add timeout to tracking set
+  const addTimeout = useCallback((timeout: NodeJS.Timeout) => {
+    timeoutRefs.current.add(timeout);
+  }, []);
+
+  // Process transcription data
+  useEffect(() => {
+    setPhraseTimings(processedTimings);
+    setMessages(processedMessages);
+    setAudioPlayer(prev => ({ ...prev, totalTime: totalDuration }));
+  }, [processedTimings, processedMessages, totalDuration]);
+
+  // Memoize current phrase index calculation
+  const currentPhraseIndex = useMemo(() => {
+    if (phraseTimings.length === 0) return 0;
+    return getCurrentPhraseIndex(phraseTimings, audioPlayer.currentTime);
+  }, [phraseTimings, audioPlayer.currentTime]);
+
+  // Memoize visible messages calculation
+  const currentVisibleMessages = useMemo(() => {
+    if (phraseTimings.length === 0) return [];
+    const visible = getVisibleMessages(messages, audioPlayer.currentTime);
+    return updateMessageStates(visible, audioPlayer.currentTime);
+  }, [phraseTimings, messages, audioPlayer.currentTime]);
+
+  // Update visible messages based on current time
   useEffect(() => {
     if (phraseTimings.length === 0) return;
 
-    const currentPhraseIndex = getCurrentPhraseIndex(
-      phraseTimings,
-      audioPlayer.currentTime,
-    );
-    const visible = getVisibleMessages(messages, audioPlayer.currentTime);
-    const updatedVisible = updateMessageStates(
-      visible,
-      audioPlayer.currentTime,
-    );
-
-    setVisibleMessages(updatedVisible);
+    setVisibleMessages(currentVisibleMessages);
     setAudioPlayer(prev => ({ ...prev, currentPhraseIndex }));
+  }, [currentVisibleMessages, currentPhraseIndex]);
 
-    const currentPhrase = phraseTimings[currentPhraseIndex];
-    if (currentPhrase && audioPlayer.currentTime >= currentPhrase.startTime) {
-      const lastMessage = messages.find(msg => msg.id === currentPhrase.id);
-      if (lastMessage) {
-        setLastSpokenPhrase(lastMessage);
-      }
-    }
-  }, [audioPlayer.currentTime, phraseTimings, messages]);
-
-  // Native audio loading (mobile)
-  const loadNativeAudio = useCallback(async () => {
-    if (!Sound || typeof Sound !== 'function') return;
+  // Web audio setup
+  const setupWebAudio = useCallback(async () => {
+    if (!isWeb) return;
 
     try {
-      let soundSource: string | number;
-      if (typeof audioUri === 'string') {
-        soundSource = audioUri;
-      } else if (typeof audioUri === 'number') {
-        soundSource = audioUri;
-      } else {
-        return;
-      }
-
-      const basePath =
-        typeof soundSource === 'string' && !soundSource.startsWith('http')
-          ? Sound.MAIN_BUNDLE
-          : undefined;
-
-      const sound = new Sound(soundSource, basePath, (error: any) => {
-        if (error) {
-          console.error({
-            'Base path:': basePath,
-            'Audio source:': soundSource,
-            'Error loading audio:': error,
-          });
-          return;
-        }
-
-        const duration = sound.getDuration();
-        setAudioPlayer(prev => ({
-          ...prev,
-          isLoaded: true,
-          totalTime: duration * 1000,
-        }));
-      });
-
-      soundRef.current = sound;
-    } catch (error) {
-      console.error('Error creating sound:', error);
-    }
-  }, [audioUri]);
-
-  // Web audio loading
-  const loadWebAudio = useCallback(async () => {
-    try {
-      console.log('Loading audio URI:', audioUri);
       const audio = new Audio(audioUri as string);
 
       audio.addEventListener('loadedmetadata', () => {
-        console.log('Audio metadata loaded, duration:', audio.duration);
         setAudioPlayer(prev => ({
           ...prev,
           isLoaded: true,
-          totalTime: audio.duration * 1000, // Convert to milliseconds
+          totalTime: audio.duration * 1000,
         }));
+      });
 
-        const handleTimeUpdate = () => {
-          if (audio.currentTime !== undefined) {
-            const currentTime = audio.currentTime * 1000;
-            setAudioPlayer(prev => ({ ...prev, currentTime }));
-          }
-        };
-
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('progress', handleTimeUpdate);
-
-        const intervalId = setInterval(() => {
-          if (audio.currentTime !== undefined) {
-            const currentTime = audio.currentTime * 1000;
-            setAudioPlayer(prev => ({ ...prev, currentTime }));
-          }
-        }, 50);
-
-        timeUpdateHandlerRef.current = handleTimeUpdate;
-        progressIntervalRef.current = intervalId;
+      audio.addEventListener('timeupdate', () => {
+        const currentTime = audio.currentTime * 1000;
+        setAudioPlayer(prev => ({ ...prev, currentTime }));
       });
 
       audio.addEventListener('ended', () => {
@@ -200,204 +141,106 @@ export const useUnifiedAudioPlayer = (
         }));
       });
 
-      audio.addEventListener('error', e => {
-        console.error('Audio loading error:', e);
-        console.error('Audio error details:', audio.error);
-      });
-
-      audio.addEventListener('canplay', () => {
-        console.log('Audio can start playing');
-      });
-
       audioRef.current = audio;
     } catch (error) {
-      console.error('Error creating audio:', error);
+      console.error('Error setting up web audio:', error);
     }
-  }, [audioUri]);
+  }, [audioUri, isWeb]);
 
-  // Audio loading effect
+  // Initialize audio
   useEffect(() => {
-    console.log('Audio loading effect triggered, isWeb:', isWeb);
     if (isWeb) {
-      console.log('Loading web audio...');
-      loadWebAudio();
-    } else {
-      console.log('Loading native audio...');
-      loadNativeAudio();
+      setupWebAudio();
     }
 
     return () => {
-      // Cleanup native audio
-      if (soundRef.current) {
-        soundRef.current.release();
-      }
-      if (updateIntervalRef.current) {
-        clearInterval(updateIntervalRef.current);
-      }
-
-      // Cleanup web audio
-      if (audioRef.current && timeUpdateHandlerRef.current) {
-        audioRef.current.removeEventListener(
-          'timeupdate',
-          timeUpdateHandlerRef.current,
-        );
-        audioRef.current.removeEventListener(
-          'progress',
-          timeUpdateHandlerRef.current,
-        );
-      }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      clearAllTimeouts();
     };
-  }, [isWeb, loadWebAudio, loadNativeAudio]);
+  }, [isWeb, setupWebAudio, clearAllTimeouts]);
 
-  // Native audio end handler
-  const handleNativeAudioEnd = useCallback(() => {
-    if (soundRef.current) {
-      soundRef.current.pause();
-    }
+  // Video event handlers (native only)
+  const onLoad = useCallback((data: OnLoadData) => {
+    console.log('Video loaded:', data);
+    const totalTimeMs = data.duration * 1000;
+    setAudioPlayer(prev => ({
+      ...prev,
+      isLoaded: true,
+      totalTime: totalTimeMs,
+    }));
+  }, []);
 
-    if (updateIntervalRef.current) {
-      clearInterval(updateIntervalRef.current);
-      updateIntervalRef.current = null;
-    }
+  const onProgress = useCallback(
+    (data: OnProgressData) => {
+      if (audioPlayer.isSeeking) return; // Don't update during seeking
 
+      const currentTimeMs = data.currentTime * 1000;
+
+      // Only update if the time difference is significant (more than 50ms)
+      // This reduces unnecessary re-renders during playback
+      if (Math.abs(currentTimeMs - audioPlayer.currentTime) > 50) {
+        setAudioPlayer(prev => ({
+          ...prev,
+          currentTime: currentTimeMs,
+        }));
+      }
+    },
+    [audioPlayer.isSeeking, audioPlayer.currentTime],
+  );
+
+  const onError = useCallback(
+    (error: any) => {
+      console.error('Video error:', error);
+      console.error('Audio URI:', audioUri);
+    },
+    [audioUri],
+  );
+
+  const onEnd = useCallback(() => {
+    console.log('Audio ended');
     setAudioPlayer(prev => ({
       ...prev,
       isPlaying: false,
       currentTime: 0,
       currentPhraseIndex: 0,
-      playbackRate: 1.0,
     }));
-
-    isRepeatingRef.current = false;
-    repeatEndTimeRef.current = 0;
   }, []);
 
-  // Native audio time updates
-  const startNativeTimeUpdates = useCallback(() => {
-    if (updateIntervalRef.current) {
-      clearInterval(updateIntervalRef.current);
+  // Control functions
+  const togglePlayPause = useCallback(async () => {
+    if (!audioPlayer.isLoaded) {
+      console.log('Audio not loaded yet');
+      return;
     }
 
-    updateIntervalRef.current = setInterval(() => {
-      if (soundRef.current) {
-        soundRef.current.getCurrentTime((seconds: number) => {
-          const currentTime = seconds * 1000;
-
-          if (
-            isRepeatingRef.current &&
-            currentTime >= repeatEndTimeRef.current
-          ) {
-            if (soundRef.current && soundRef.current.setSpeed) {
-              soundRef.current.setSpeed(1.0);
-            }
-            setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
-            isRepeatingRef.current = false;
-            repeatEndTimeRef.current = 0;
-          }
-
-          if (
-            audioPlayer.totalTime > 0 &&
-            (currentTime >= audioPlayer.totalTime - 100 ||
-              seconds >= audioPlayer.totalTime / 1000 - 0.1)
-          ) {
-            handleNativeAudioEnd();
-            return;
-          }
-
-          setAudioPlayer(prev => ({ ...prev, currentTime }));
-        });
-      }
-    }, 50);
-  }, [audioPlayer.totalTime, handleNativeAudioEnd]);
-
-  // Seek to specific time
-  const seekTo = useCallback(
-    async (time: number) => {
-      if (!audioPlayer.isLoaded) return;
-
-      try {
-        setAudioPlayer(prev => ({ ...prev, isSeeking: true }));
-
-        if (isWeb) {
-          if (!audioRef.current) return;
-          audioRef.current.currentTime = time / 1000;
-        } else {
-          if (!soundRef.current) return;
-          const timeInSeconds = time / 1000;
-          soundRef.current.setCurrentTime(timeInSeconds);
-        }
-
-        if (time === 0) {
-          setAudioPlayer(prev => ({
-            ...prev,
-            currentTime: time,
-            currentPhraseIndex: 0,
-            isSeeking: false,
-          }));
-        } else {
-          setAudioPlayer(prev => ({
-            ...prev,
-            currentTime: time,
-            isSeeking: false,
-          }));
-        }
-      } catch (error) {
-        console.error('Error seeking:', error);
-        setAudioPlayer(prev => ({ ...prev, isSeeking: false }));
-      }
-    },
-    [audioPlayer.isLoaded, isWeb],
-  );
-
-  // Toggle play/pause
-  const togglePlayPause = useCallback(async () => {
-    if (!audioPlayer.isLoaded) return;
-
     try {
-      if (audioPlayer.isPlaying) {
-        // Pause logic
-        if (isWeb) {
-          if (!audioRef.current) return;
+      if (isWeb && audioRef.current) {
+        if (audioPlayer.isPlaying) {
           audioRef.current.pause();
+          setAudioPlayer(prev => ({ ...prev, isPlaying: false }));
         } else {
-          if (!soundRef.current) return;
-          soundRef.current.pause();
-          if (updateIntervalRef.current) {
-            clearInterval(updateIntervalRef.current);
-            updateIntervalRef.current = null;
+          if (audioPlayer.currentTime >= audioPlayer.totalTime - 100) {
+            audioRef.current.currentTime = 0;
           }
-        }
-        setAudioPlayer(prev => ({ ...prev, isPlaying: false }));
-      } else {
-        // Play logic
-        if (audioPlayer.currentTime >= audioPlayer.totalTime - 100) {
-          await seekTo(0);
-        }
-
-        if (isWeb) {
-          if (!audioRef.current) return;
           await audioRef.current.play();
-        } else {
-          if (!soundRef.current) return;
-          if (soundRef.current.setSpeed && !isRepeatingRef.current) {
-            soundRef.current.setSpeed(1.0);
-          }
-          soundRef.current.play();
-          startNativeTimeUpdates();
+          setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
+        }
+      } else {
+        // Native - react-native-video handles play/pause via paused prop
+        const newPlayingState = !audioPlayer.isPlaying;
+
+        if (
+          newPlayingState &&
+          audioPlayer.currentTime >= audioPlayer.totalTime - 100
+        ) {
+          // Reset to beginning if at end
+          seekTo(0);
         }
 
-        setAudioPlayer(prev => ({
-          ...prev,
-          isPlaying: true,
-          playbackRate: isWeb ? 1.0 : isRepeatingRef.current ? 0.75 : 1.0,
-        }));
+        setAudioPlayer(prev => ({ ...prev, isPlaying: newPlayingState }));
       }
     } catch (error) {
       console.error('Error toggling play/pause:', error);
@@ -408,23 +251,42 @@ export const useUnifiedAudioPlayer = (
     audioPlayer.currentTime,
     audioPlayer.totalTime,
     isWeb,
-    seekTo,
-    startNativeTimeUpdates,
   ]);
 
-  // Rewind: Go to beginning of current phrase, or previous phrase if at beginning
-  const rewind = useCallback(async () => {
-    if (phraseTimings.length === 0) return;
+  const seekTo = useCallback(
+    (time: number) => {
+      if (!audioPlayer.isLoaded) return;
 
-    // Reset repeat state for native audio
-    if (!isWeb) {
-      isRepeatingRef.current = false;
-      repeatEndTimeRef.current = 0;
-      if (soundRef.current && soundRef.current.setSpeed) {
-        soundRef.current.setSpeed(1.0);
+      try {
+        // Batch state updates to reduce re-renders
+        setAudioPlayer(prev => ({
+          ...prev,
+          currentTime: time,
+          isSeeking: true,
+        }));
+
+        if (isWeb && audioRef.current) {
+          audioRef.current.currentTime = time / 1000;
+        } else if (videoRef.current) {
+          // Use react-native-video seek method
+          videoRef.current.seek(time / 1000);
+        }
+
+        // Reset seeking flag after a short delay to allow seeking to complete
+        const timeout = setTimeout(() => {
+          setAudioPlayer(prev => ({ ...prev, isSeeking: false }));
+        }, 50);
+        addTimeout(timeout);
+      } catch (error) {
+        console.error('Error seeking:', error);
+        setAudioPlayer(prev => ({ ...prev, isSeeking: false }));
       }
-      setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
-    }
+    },
+    [audioPlayer.isLoaded, isWeb, addTimeout],
+  );
+
+  const rewind = useCallback(() => {
+    if (phraseTimings.length === 0) return;
 
     const currentIndex = audioPlayer.currentPhraseIndex;
     let targetIndex = currentIndex;
@@ -439,150 +301,59 @@ export const useUnifiedAudioPlayer = (
 
     const targetPhrase = phraseTimings[targetIndex];
     if (targetPhrase) {
-      await seekTo(targetPhrase.startTime);
-
-      // Only continue playing if it was already playing
-      if (audioPlayer.isPlaying) {
-        if (isWeb) {
-          if (audioRef.current) {
-            await audioRef.current.play();
-          }
-        } else {
-          if (soundRef.current) {
-            soundRef.current.play();
-            startNativeTimeUpdates();
-          }
-        }
-      } else {
-        // If paused, make sure native audio stays paused after seeking
-        if (!isWeb && soundRef.current) {
-          soundRef.current.pause();
-        }
-      }
+      seekTo(targetPhrase.startTime);
     }
   }, [
     audioPlayer.currentPhraseIndex,
     audioPlayer.currentTime,
-    audioPlayer.isPlaying,
     phraseTimings,
-    isWeb,
     seekTo,
-    startNativeTimeUpdates,
   ]);
 
-  // Forward: Skip to beginning of next phrase
-  const fastForward = useCallback(async () => {
+  const fastForward = useCallback(() => {
     if (phraseTimings.length === 0) return;
-
-    // Reset repeat state for native audio
-    if (!isWeb) {
-      isRepeatingRef.current = false;
-      repeatEndTimeRef.current = 0;
-      if (soundRef.current && soundRef.current.setSpeed) {
-        soundRef.current.setSpeed(1.0);
-      }
-      setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
-    }
 
     const currentIndex = audioPlayer.currentPhraseIndex;
     const nextIndex = Math.min(phraseTimings.length - 1, currentIndex + 1);
     const nextPhrase = phraseTimings[nextIndex];
 
     if (nextPhrase) {
-      await seekTo(nextPhrase.startTime);
-
-      // Only continue playing if it was already playing
-      if (audioPlayer.isPlaying) {
-        if (isWeb) {
-          if (audioRef.current) {
-            await audioRef.current.play();
-          }
-        } else {
-          if (soundRef.current) {
-            soundRef.current.play();
-            startNativeTimeUpdates();
-          }
-        }
-      } else {
-        // If paused, make sure native audio stays paused after seeking
-        if (!isWeb && soundRef.current) {
-          soundRef.current.pause();
-        }
-      }
+      seekTo(nextPhrase.startTime);
     }
-  }, [
-    audioPlayer.currentPhraseIndex,
-    audioPlayer.isPlaying,
-    phraseTimings,
-    isWeb,
-    seekTo,
-    startNativeTimeUpdates,
-  ]);
+  }, [audioPlayer.currentPhraseIndex, phraseTimings, seekTo]);
 
-  // Repeat: Platform-specific repeat functionality
-  const repeat = useCallback(async () => {
+  const repeat = useCallback(() => {
     if (phraseTimings.length === 0) return;
 
-    try {
-      if (isWeb) {
-        // Web repeat: use lastSpokenPhrase
-        if (!lastSpokenPhrase || !audioRef.current) return;
+    const currentIndex = audioPlayer.currentPhraseIndex;
+    const currentPhrase = phraseTimings[currentIndex];
 
-        const phrase = phraseTimings.find(p => p.id === lastSpokenPhrase.id);
-        if (phrase) {
-          await seekTo(phrase.startTime);
+    if (currentPhrase) {
+      seekTo(currentPhrase.startTime);
 
-          // Only continue playing if it was already playing
-          if (audioPlayer.isPlaying) {
-            await audioRef.current.play();
-          }
-        }
-      } else {
-        // Native repeat: play current phrase at 0.75x speed
-        if (!soundRef.current) return;
+      // Batch state updates to reduce re-renders
+      setAudioPlayer(prev => ({
+        ...prev,
+        playbackRate: 0.75,
+      }));
 
-        const currentIndex = audioPlayer.currentPhraseIndex;
-        const lastPlayedIndex = currentIndex > 0 ? currentIndex : 0;
-        const lastPhrase = phraseTimings[lastPlayedIndex];
+      // Reset playback rate back to 1.0 after phrase duration
+      const timeout = setTimeout(() => {
+        setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
+      }, currentPhrase.endTime - currentPhrase.startTime);
+      addTimeout(timeout);
 
-        if (lastPhrase) {
-          isRepeatingRef.current = true;
-          repeatEndTimeRef.current = lastPhrase.endTime;
-
-          if (soundRef.current.setSpeed) {
-            soundRef.current.setSpeed(0.75);
-          }
-
-          await seekTo(lastPhrase.startTime);
-
-          // Only continue playing if it was already playing
-          if (audioPlayer.isPlaying) {
-            soundRef.current.play();
-            setAudioPlayer(prev => ({ ...prev, playbackRate: 0.75 }));
-            startNativeTimeUpdates();
-          } else {
-            // If paused, make sure native audio stays paused and just update the playback rate
-            soundRef.current.pause();
-            setAudioPlayer(prev => ({ ...prev, playbackRate: 0.75 }));
-          }
-        } else {
-          if (soundRef.current.setSpeed) {
-            soundRef.current.setSpeed(1.0);
-          }
-          setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
-        }
+      // For web, also update the HTML audio element directly
+      if (isWeb && audioRef.current) {
+        audioRef.current.playbackRate = 0.75;
       }
-    } catch (error) {
-      console.error('Error repeating phrase:', error);
     }
   }, [
-    phraseTimings,
-    isWeb,
-    lastSpokenPhrase,
-    audioPlayer.isPlaying,
     audioPlayer.currentPhraseIndex,
+    phraseTimings,
     seekTo,
-    startNativeTimeUpdates,
+    isWeb,
+    addTimeout,
   ]);
 
   return {
@@ -594,5 +365,11 @@ export const useUnifiedAudioPlayer = (
     rewind,
     fastForward,
     repeat,
+    // Video-specific (native only)
+    videoRef,
+    onLoad,
+    onProgress,
+    onError,
+    onEnd,
   };
 };
