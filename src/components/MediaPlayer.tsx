@@ -61,7 +61,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = memo(
     onError,
     onEnd,
   }) => {
-    // Memoize expensive calculations
     const progressPercentage = useMemo(() => {
       return (
         calculateProgress(audioPlayer.currentTime, audioPlayer.totalTime) * 100

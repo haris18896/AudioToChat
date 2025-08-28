@@ -34,7 +34,6 @@ const ChatScreen: React.FC = () => {
     onEnd,
   } = useUnifiedAudioPlayer(audioUri, transcriptionData);
 
-  // Memoize platform-specific content to prevent unnecessary re-renders
   const webContent = useMemo(
     () => (
       <View style={styles.webContentContainer}>

@@ -162,7 +162,6 @@ export const useUnifiedAudioPlayer = (
     };
   }, [isWeb, setupWebAudio, clearAllTimeouts]);
 
-  // Video event handlers (native only)
   const onLoad = useCallback((data: OnLoadData) => {
     console.log('Video loaded:', data);
     const totalTimeMs = data.duration * 1000;
@@ -175,12 +174,10 @@ export const useUnifiedAudioPlayer = (
 
   const onProgress = useCallback(
     (data: OnProgressData) => {
-      if (audioPlayer.isSeeking) return; // Don't update during seeking
+      if (audioPlayer.isSeeking) return;
 
       const currentTimeMs = data.currentTime * 1000;
 
-      // Only update if the time difference is significant (more than 50ms)
-      // This reduces unnecessary re-renders during playback
       if (Math.abs(currentTimeMs - audioPlayer.currentTime) > 50) {
         setAudioPlayer(prev => ({
           ...prev,
@@ -229,14 +226,12 @@ export const useUnifiedAudioPlayer = (
           setAudioPlayer(prev => ({ ...prev, isPlaying: true }));
         }
       } else {
-        // Native - react-native-video handles play/pause via paused prop
         const newPlayingState = !audioPlayer.isPlaying;
 
         if (
           newPlayingState &&
           audioPlayer.currentTime >= audioPlayer.totalTime - 100
         ) {
-          // Reset to beginning if at end
           seekTo(0);
         }
 
@@ -258,7 +253,6 @@ export const useUnifiedAudioPlayer = (
       if (!audioPlayer.isLoaded) return;
 
       try {
-        // Batch state updates to reduce re-renders
         setAudioPlayer(prev => ({
           ...prev,
           currentTime: time,
@@ -268,7 +262,6 @@ export const useUnifiedAudioPlayer = (
         if (isWeb && audioRef.current) {
           audioRef.current.currentTime = time / 1000;
         } else if (videoRef.current) {
-          // Use react-native-video seek method
           videoRef.current.seek(time / 1000);
         }
 
@@ -331,19 +324,16 @@ export const useUnifiedAudioPlayer = (
     if (currentPhrase) {
       seekTo(currentPhrase.startTime);
 
-      // Batch state updates to reduce re-renders
       setAudioPlayer(prev => ({
         ...prev,
         playbackRate: 0.75,
       }));
 
-      // Reset playback rate back to 1.0 after phrase duration
       const timeout = setTimeout(() => {
         setAudioPlayer(prev => ({ ...prev, playbackRate: 1.0 }));
       }, currentPhrase.endTime - currentPhrase.startTime);
       addTimeout(timeout);
 
-      // For web, also update the HTML audio element directly
       if (isWeb && audioRef.current) {
         audioRef.current.playbackRate = 0.75;
       }
